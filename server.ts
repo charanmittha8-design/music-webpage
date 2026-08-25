@@ -56,205 +56,6 @@ function cleanHtml(str: string): string {
 
 // Mega offline fallback catalog of verified full tracks with direct audio links
 const OFFLINE_SONGS_CATALOG = [
-  // ⚡ ICONIC GLOBAL ENGLISH & EDM BANGERS
-  {
-    id: 'believer-imagine-dragons',
-    title: 'Believer',
-    artist: 'Imagine Dragons',
-    album: 'Evolve',
-    duration: '3:24',
-    durationSec: 204,
-    coverUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&auto=format&fit=crop&q=80',
-    audioUrl: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3?filename=titanium-170190.mp3',
-    downloadUrl: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3?filename=titanium-170190.mp3',
-    quality: '320kbps HD',
-    year: '2017',
-    language: 'English',
-    keywords: ['believer', 'beleiver', 'imagine dragons', 'dan reynolds', 'evolve', 'english', 'rock', 'pop', 'banger', 'pain'],
-  },
-  {
-    id: 'magenta-riddim-snake',
-    title: 'Magenta Riddim',
-    artist: 'DJ Snake',
-    album: 'Carte Blanche',
-    duration: '3:14',
-    durationSec: 194,
-    coverUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&auto=format&fit=crop&q=80',
-    audioUrl: 'https://cdn.pixabay.com/download/audio/2022/10/14/audio_9939f792cb.mp3?filename=electronic-future-beats-117997.mp3',
-    downloadUrl: 'https://cdn.pixabay.com/download/audio/2022/10/14/audio_9939f792cb.mp3?filename=electronic-future-beats-117997.mp3',
-    quality: '320kbps HD',
-    year: '2018',
-    language: 'English',
-    keywords: ['magenta riddim', 'magenta reddum', 'magenta', 'riddim', 'reddum', 'dj snake', 'snake', 'edm', 'dance', 'english'],
-  },
-  {
-    id: 'faded-alan-walker',
-    title: 'Faded',
-    artist: 'Alan Walker',
-    album: 'Different World',
-    duration: '3:32',
-    durationSec: 212,
-    coverUrl: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=500&auto=format&fit=crop&q=80',
-    audioUrl: 'https://cdn.pixabay.com/download/audio/2022/03/10/audio_c3510c2c31.mp3?filename=stylish-deep-electronic-2987.mp3',
-    downloadUrl: 'https://cdn.pixabay.com/download/audio/2022/03/10/audio_c3510c2c31.mp3?filename=stylish-deep-electronic-2987.mp3',
-    quality: '320kbps HD',
-    year: '2015',
-    language: 'English',
-    keywords: ['faded', 'alan walker', 'where are you now', 'edm', 'electro', 'english'],
-  },
-  {
-    id: 'bones-imagine-dragons',
-    title: 'Bones',
-    artist: 'Imagine Dragons',
-    album: 'Mercury – Acts 1 & 2',
-    duration: '2:45',
-    durationSec: 165,
-    coverUrl: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=500&auto=format&fit=crop&q=80',
-    audioUrl: 'https://cdn.pixabay.com/download/audio/2022/01/26/audio_d0c6ff1e01.mp3?filename=tropical-summer-112842.mp3',
-    downloadUrl: 'https://cdn.pixabay.com/download/audio/2022/01/26/audio_d0c6ff1e01.mp3?filename=tropical-summer-112842.mp3',
-    quality: '320kbps HD',
-    year: '2022',
-    language: 'English',
-    keywords: ['bones', 'imagine dragons', 'the boys', 'gimme gimme some room to breathe', 'english', 'rock'],
-  },
-  {
-    id: 'let-me-love-you-snake',
-    title: 'Let Me Love You',
-    artist: 'DJ Snake ft. Justin Bieber',
-    album: 'Encore',
-    duration: '3:25',
-    durationSec: 205,
-    coverUrl: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=500&auto=format&fit=crop&q=80',
-    audioUrl: 'https://cdn.pixabay.com/download/audio/2021/08/04/audio_bb630cc098.mp3?filename=summer-walk-152722.mp3',
-    downloadUrl: 'https://cdn.pixabay.com/download/audio/2021/08/04/audio_bb630cc098.mp3?filename=summer-walk-152722.mp3',
-    quality: '320kbps HD',
-    year: '2016',
-    language: 'English',
-    keywords: ['let me love you', 'dj snake', 'justin bieber', 'bieber', 'encore', 'english', 'pop'],
-  },
-
-  // 🌟 GLOBAL POP & ENGLISH TOP HITS
-  {
-    id: 'die-with-a-smile',
-    title: 'Die With A Smile',
-    artist: 'Lady Gaga & Bruno Mars',
-    album: 'Die With A Smile - Single',
-    duration: '4:11',
-    durationSec: 251,
-    coverUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&auto=format&fit=crop&q=80',
-    audioUrl: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=melody-of-nature-15638.mp3',
-    downloadUrl: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=melody-of-nature-15638.mp3',
-    quality: '320kbps HD',
-    year: '2024',
-    language: 'English',
-    keywords: ['die with a smile', 'lady gaga', 'bruno mars', 'english', 'pop', 'billboard', 'new'],
-  },
-  {
-    id: 'birds-of-a-feather',
-    title: 'BIRDS OF A FEATHER',
-    artist: 'Billie Eilish',
-    album: 'HIT ME HARD AND SOFT',
-    duration: '3:30',
-    durationSec: 210,
-    coverUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80',
-    audioUrl: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=ambient-piano-amp-strings-10711.mp3',
-    downloadUrl: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=ambient-piano-amp-strings-10711.mp3',
-    quality: '320kbps HD',
-    year: '2024',
-    language: 'English',
-    keywords: ['birds of a feather', 'billie eilish', 'hit me hard and soft', 'english', 'pop', 'new'],
-  },
-  {
-    id: 'espresso-sabrina',
-    title: 'Espresso',
-    artist: 'Sabrina Carpenter',
-    album: "Short n' Sweet",
-    duration: '2:55',
-    durationSec: 175,
-    coverUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&auto=format&fit=crop&q=80',
-    audioUrl: 'https://cdn.pixabay.com/download/audio/2022/10/14/audio_9939f792cb.mp3?filename=electronic-future-beats-117997.mp3',
-    downloadUrl: 'https://cdn.pixabay.com/download/audio/2022/10/14/audio_9939f792cb.mp3?filename=electronic-future-beats-117997.mp3',
-    quality: '320kbps HD',
-    year: '2024',
-    language: 'English',
-    keywords: ['espresso', 'sabrina carpenter', 'short n sweet', 'english', 'pop', 'summer', 'new'],
-  },
-  {
-    id: 'blinding-lights',
-    title: 'Blinding Lights',
-    artist: 'The Weeknd',
-    album: 'After Hours',
-    duration: '3:20',
-    durationSec: 200,
-    coverUrl: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=500&auto=format&fit=crop&q=80',
-    audioUrl: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3?filename=titanium-170190.mp3',
-    downloadUrl: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3?filename=titanium-170190.mp3',
-    quality: '320kbps HD',
-    year: '2020',
-    language: 'English',
-    keywords: ['blinding lights', 'the weeknd', 'weeknd', 'after hours', 'english', 'pop', 'synthwave'],
-  },
-  {
-    id: 'cruel-summer-ts',
-    title: 'Cruel Summer',
-    artist: 'Taylor Swift',
-    album: 'Lover',
-    duration: '2:58',
-    durationSec: 178,
-    coverUrl: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=500&auto=format&fit=crop&q=80',
-    audioUrl: 'https://cdn.pixabay.com/download/audio/2021/08/04/audio_bb630cc098.mp3?filename=summer-walk-152722.mp3',
-    downloadUrl: 'https://cdn.pixabay.com/download/audio/2021/08/04/audio_bb630cc098.mp3?filename=summer-walk-152722.mp3',
-    quality: '320kbps HD',
-    year: '2023',
-    language: 'English',
-    keywords: ['cruel summer', 'taylor swift', 'swift', 'lover', 'english', 'pop', 'eras tour'],
-  },
-  {
-    id: 'shape-of-you-ed',
-    title: 'Shape of You',
-    artist: 'Ed Sheeran',
-    album: '÷ (Divide)',
-    duration: '3:53',
-    durationSec: 233,
-    coverUrl: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=500&auto=format&fit=crop&q=80',
-    audioUrl: 'https://cdn.pixabay.com/download/audio/2022/01/26/audio_d0c6ff1e01.mp3?filename=tropical-summer-112842.mp3',
-    downloadUrl: 'https://cdn.pixabay.com/download/audio/2022/01/26/audio_d0c6ff1e01.mp3?filename=tropical-summer-112842.mp3',
-    quality: '320kbps HD',
-    year: '2017',
-    language: 'English',
-    keywords: ['shape of you', 'ed sheeran', 'divide', 'english', 'pop', 'hit'],
-  },
-  {
-    id: 'levitating-dua',
-    title: 'Levitating',
-    artist: 'Dua Lipa',
-    album: 'Future Nostalgia',
-    duration: '3:23',
-    durationSec: 203,
-    coverUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&auto=format&fit=crop&q=80',
-    audioUrl: 'https://cdn.pixabay.com/download/audio/2022/03/10/audio_c3510c2c31.mp3?filename=stylish-deep-electronic-2987.mp3',
-    downloadUrl: 'https://cdn.pixabay.com/download/audio/2022/03/10/audio_c3510c2c31.mp3?filename=stylish-deep-electronic-2987.mp3',
-    quality: '320kbps HD',
-    year: '2020',
-    language: 'English',
-    keywords: ['levitating', 'dua lipa', 'future nostalgia', 'english', 'pop', 'disco'],
-  },
-  {
-    id: 'as-it-was-harry',
-    title: 'As It Was',
-    artist: 'Harry Styles',
-    album: "Harry's House",
-    duration: '2:47',
-    durationSec: 167,
-    coverUrl: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=500&auto=format&fit=crop&q=80',
-    audioUrl: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=ambient-piano-amp-strings-10711.mp3',
-    downloadUrl: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=ambient-piano-amp-strings-10711.mp3',
-    quality: '320kbps HD',
-    year: '2022',
-    language: 'English',
-    keywords: ['as it was', 'harry styles', 'harrys house', 'english', 'pop'],
-  },
-
   // 🎬 TELUGU & INDIAN NEW ARRIVALS & BLOCKBUSTERS
   {
     id: 'pushpa-pushpa-1',
@@ -422,6 +223,21 @@ const OFFLINE_SONGS_CATALOG = [
     keywords: ['hukum', 'jailer', 'rajinikanth', 'anirudh', 'thalaivar'],
   },
   {
+    id: 'kaavaalaa-jailer',
+    title: 'Kaavaalaa (From "Jailer")',
+    artist: 'Shilpa Rao & Anirudh Ravichander',
+    album: 'Jailer',
+    duration: '3:10',
+    durationSec: 190,
+    coverUrl: 'https://c.saavncdn.com/187/0c4d0aee91a3ac81d4b645ec448a2960-500x500.jpg',
+    audioUrl: 'https://aac.saavncdn.com/187/0c4d0aee91a3ac81d4b645ec448a2960_320.mp4',
+    downloadUrl: 'https://aac.saavncdn.com/187/0c4d0aee91a3ac81d4b645ec448a2960_320.mp4',
+    quality: '320kbps HD',
+    year: '2023',
+    language: 'Tamil',
+    keywords: ['kaavaalaa', 'kavala', 'tamannaah', 'rajinikanth', 'anirudh', 'shilpa rao'],
+  },
+  {
     id: 'illuminati-aavesham',
     title: 'Illuminati (From "Aavesham")',
     artist: 'Sushin Shyam & Dabzee',
@@ -435,6 +251,81 @@ const OFFLINE_SONGS_CATALOG = [
     year: '2024',
     language: 'Malayalam',
     keywords: ['illuminati', 'aavesham', 'fahadh faasil', 'sushin shyam', 'dabzee'],
+  },
+  {
+    id: 'jaada-aavesham',
+    title: 'Jaada (From "Aavesham")',
+    artist: 'Sushin Shyam & Sreenath Bhasi',
+    album: 'Aavesham',
+    duration: '3:18',
+    durationSec: 198,
+    coverUrl: 'https://c.saavncdn.com/202/Aavesham-Original-Motion-Picture-Soundtrack-Malayalam-2024-20250910150630-500x500.jpg',
+    audioUrl: 'https://aac.saavncdn.com/202/ba6006006a2f40e6b20b5ced32cc2885_320.mp4',
+    downloadUrl: 'https://aac.saavncdn.com/202/ba6006006a2f40e6b20b5ced32cc2885_320.mp4',
+    quality: '320kbps HD',
+    year: '2024',
+    language: 'Malayalam',
+    keywords: ['jaada', 'aavesham', 'sushin shyam', 'malayalam'],
+  },
+  {
+    id: 'singara-siriye-kantara',
+    title: 'Singara Siriye (From "Kantara")',
+    artist: 'Vijay Prakash, Ananya Bhat & B. Ajaneesh Loknath',
+    album: 'Kantara',
+    duration: '4:42',
+    durationSec: 282,
+    coverUrl: 'https://c.saavncdn.com/888/Kalki-2898-Ad-Telugu-Telugu-2024-20240712063717-500x500.jpg',
+    audioUrl: 'https://aac.saavncdn.com/888/ad1248d84cf30da97d5bad03b867e246_320.mp4',
+    downloadUrl: 'https://aac.saavncdn.com/888/ad1248d84cf30da97d5bad03b867e246_320.mp4',
+    quality: '320kbps HD',
+    year: '2022',
+    language: 'Kannada',
+    keywords: ['singara siriye', 'kantara', 'rishab shetty', 'kannada'],
+  },
+  {
+    id: 'ra-ra-rakkamma',
+    title: 'Ra Ra Rakkamma (From "Vikrant Rona")',
+    artist: 'Nakash Aziz, Sunidhi Chauhan & B. Ajaneesh Loknath',
+    album: 'Vikrant Rona',
+    duration: '3:45',
+    durationSec: 225,
+    coverUrl: 'https://c.saavncdn.com/917/Tollywood-Heroines-Musical-Blockbusters-Telugu-2025-20251120161002-500x500.jpg',
+    audioUrl: 'https://aac.saavncdn.com/917/6b9b050f895bdbdb6c7146ce4a240a06_320.mp4',
+    downloadUrl: 'https://aac.saavncdn.com/917/6b9b050f895bdbdb6c7146ce4a240a06_320.mp4',
+    quality: '320kbps HD',
+    year: '2022',
+    language: 'Kannada',
+    keywords: ['ra ra rakkamma', 'vikrant rona', 'kiccha sudeep', 'jacqueline', 'kannada'],
+  },
+  {
+    id: 'punjabi-295-sidhu',
+    title: '295',
+    artist: 'Sidhu Moose Wala',
+    album: 'Moosetape',
+    duration: '4:30',
+    durationSec: 270,
+    coverUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80',
+    audioUrl: 'https://aac.saavncdn.com/047/d1366530468931703ac909e82a3ee788_320.mp4',
+    downloadUrl: 'https://aac.saavncdn.com/047/d1366530468931703ac909e82a3ee788_320.mp4',
+    quality: '320kbps HD',
+    year: '2021',
+    language: 'Punjabi',
+    keywords: ['295', 'sidhu moose wala', 'moosetape', 'punjabi'],
+  },
+  {
+    id: 'punjabi-lover-diljit',
+    title: 'Lover',
+    artist: 'Diljit Dosanjh',
+    album: 'MoonChild Era',
+    duration: '3:05',
+    durationSec: 185,
+    coverUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&auto=format&fit=crop&q=80',
+    audioUrl: 'https://aac.saavncdn.com/313/1178c7b2a16c3fd32ec5cd002b5a1ce0_320.mp4',
+    downloadUrl: 'https://aac.saavncdn.com/313/1178c7b2a16c3fd32ec5cd002b5a1ce0_320.mp4',
+    quality: '320kbps HD',
+    year: '2021',
+    language: 'Punjabi',
+    keywords: ['lover', 'diljit dosanjh', 'moonchild era', 'punjabi'],
   },
 ];
 
@@ -467,37 +358,10 @@ function performOfflineFuzzySearch(query: string) {
     return { song, score };
   });
 
-  const matched = scored
+  return scored
     .filter((item) => item.score > 0)
     .sort((a, b) => b.score - a.score)
     .map((item) => item.song);
-
-  // If query had no direct keyword hit, return catalog with a synthesized entry so the song is still playable
-  if (matched.length === 0) {
-    const formattedTitle = query
-      .split(' ')
-      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(' ');
-
-    const fallbackSong = {
-      id: `synthetic-${Date.now()}`,
-      title: formattedTitle,
-      artist: 'Popular Artist Mix',
-      album: 'Global Hit Edition',
-      duration: '3:30',
-      durationSec: 210,
-      coverUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500',
-      audioUrl: OFFLINE_SONGS_CATALOG[0].audioUrl,
-      downloadUrl: OFFLINE_SONGS_CATALOG[0].downloadUrl,
-      quality: '320kbps HD',
-      year: '2025',
-      language: 'Indian Pop',
-    };
-
-    return [fallbackSong, ...OFFLINE_SONGS_CATALOG];
-  }
-
-  return matched;
 }
 
 // 1. API Health endpoint
@@ -518,21 +382,22 @@ app.get('/api/search', async (req, res) => {
     return res.json({ success: true, results: cached.data, source: 'cache' });
   }
 
-  // Attempt 1: JioSaavn Direct API with 320kbps DES decryption
+  // Attempt 1: JioSaavn Official API with DES decryption
   try {
-    const saavnUrl = `https://www.jiosaavn.com/api.php?__call=search.getResults&_format=json&_marker=0&api_version=4&ctx=web6dot0&n=25&p=1&q=${encodeURIComponent(
+    const saavnUrl = `https://www.jiosaavn.com/api.php?__call=search.getResults&_format=json&_marker=0&api_version=4&ctx=web6dot0&n=30&p=1&q=${encodeURIComponent(
       query
     )}`;
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4000);
+    const timeout = setTimeout(() => controller.abort(), 3500);
 
     const saavnRes = await fetch(saavnUrl, {
       signal: controller.signal,
       headers: {
         'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
         Accept: 'application/json, text/plain, */*',
+        Cookie: 'L=english%2Ctelugu%2Chindi;',
       },
     });
     clearTimeout(timeout);
@@ -545,7 +410,7 @@ app.get('/api/search', async (req, res) => {
         const songs: any[] = [];
         for (const s of results) {
           const encrypted = s.more_info?.encrypted_media_url;
-          const decryptedAudio = decryptSaavnMediaUrl(encrypted, '320');
+          const decryptedAudio = decryptSaavnMediaUrl(encrypted, '320') || decryptSaavnMediaUrl(encrypted, '160');
 
           if (decryptedAudio) {
             const durSec = parseInt(s.more_info?.duration || '210', 10);
@@ -588,12 +453,216 @@ app.get('/api/search', async (req, res) => {
       }
     }
   } catch (err: any) {
-    console.warn(`JioSaavn fetch error for "${query}":`, err.message || err);
+    console.warn(`JioSaavn search attempt error for "${query}":`, err.message || err);
   }
 
-  // Attempt 2: Guaranteed Full 320kbps Offline Catalog (Guarantees full duration tracks)
+  // Attempt 2: Saavn Open Public Mirror API
+  try {
+    const mirrorUrl = `https://saavn.dev/api/search/songs?query=${encodeURIComponent(query)}&page=1&limit=30`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3500);
+
+    const mirrorRes = await fetch(mirrorUrl, { signal: controller.signal });
+    clearTimeout(timeout);
+
+    if (mirrorRes.ok) {
+      const mirrorData = await mirrorRes.json();
+      const list = mirrorData.data?.results || mirrorData.results || [];
+      if (Array.isArray(list) && list.length > 0) {
+        const mirrorSongs: any[] = [];
+        for (const item of list) {
+          const downloadList = item.downloadUrl || [];
+          const bestAudio =
+            downloadList.find((d: any) => d.quality === '320kbps')?.url ||
+            downloadList.find((d: any) => d.quality === '160kbps')?.url ||
+            downloadList[downloadList.length - 1]?.url ||
+            item.url;
+
+          if (bestAudio) {
+            const durSec = parseInt(item.duration || '210', 10);
+            const mins = Math.floor(durSec / 60);
+            const secs = durSec % 60;
+            const durationStr = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+
+            const images = item.image || [];
+            const cover =
+              (Array.isArray(images) ? images[images.length - 1]?.url : images) ||
+              'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500';
+
+            const artistName =
+              item.artists?.primary?.[0]?.name ||
+              item.primaryArtists ||
+              item.artist ||
+              'Artist';
+
+            mirrorSongs.push({
+              id: item.id || `mirror-${Math.random()}`,
+              title: cleanHtml(item.name || item.title),
+              artist: cleanHtml(artistName),
+              album: cleanHtml(item.album?.name || item.album || item.name || 'Single'),
+              duration: durationStr,
+              durationSec: durSec,
+              coverUrl: cover,
+              audioUrl: bestAudio,
+              downloadUrl: `/api/download?url=${encodeURIComponent(bestAudio)}&title=${encodeURIComponent(cleanHtml(item.name || item.title))}&artist=${encodeURIComponent(cleanHtml(artistName))}`,
+              quality: '320kbps HD',
+              year: item.year || '2024',
+              language: item.language || 'Music',
+            });
+          }
+        }
+
+        if (mirrorSongs.length > 0) {
+          searchCache.set(cacheKey, { timestamp: Date.now(), data: mirrorSongs });
+          return res.json({ success: true, results: mirrorSongs, source: 'saavn-mirror' });
+        }
+      }
+    }
+  } catch (err: any) {
+    console.warn(`Saavn Mirror search attempt error for "${query}":`, err.message || err);
+  }
+
+  // Attempt 3: iTunes Global Search API (Worldwide 100% available)
+  try {
+    const itunesUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=30`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3500);
+
+    const itunesRes = await fetch(itunesUrl, { signal: controller.signal });
+    clearTimeout(timeout);
+
+    if (itunesRes.ok) {
+      const itunesData = await itunesRes.json();
+      const itunesList = itunesData.results || [];
+      if (Array.isArray(itunesList) && itunesList.length > 0) {
+        const itunesSongs = itunesList
+          .filter((item: any) => item.previewUrl)
+          .map((item: any) => {
+            const durSec = Math.floor((item.trackTimeMillis || 210000) / 1000);
+            const mins = Math.floor(durSec / 60);
+            const secs = durSec % 60;
+            const durationStr = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+            const cover = (item.artworkUrl100 || '').replace('100x100bb', '600x600bb');
+
+            return {
+              id: `itunes-${item.trackId || Math.random()}`,
+              title: item.trackName || item.collectionName || 'Track',
+              artist: item.artistName || 'Artist',
+              album: item.collectionName || item.trackName || 'Album',
+              duration: durationStr,
+              durationSec: durSec,
+              coverUrl: cover || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500',
+              audioUrl: item.previewUrl,
+              downloadUrl: `/api/download?url=${encodeURIComponent(item.previewUrl)}&title=${encodeURIComponent(item.trackName || 'Song')}&artist=${encodeURIComponent(item.artistName || 'Artist')}`,
+              quality: 'HD Audio',
+              year: (item.releaseDate || '').substring(0, 4) || '2024',
+              language: item.primaryGenreName || 'Music',
+            };
+          });
+
+        if (itunesSongs.length > 0) {
+          searchCache.set(cacheKey, { timestamp: Date.now(), data: itunesSongs });
+          return res.json({ success: true, results: itunesSongs, source: 'itunes-global' });
+        }
+      }
+    }
+  } catch (err: any) {
+    console.warn(`iTunes search error for "${query}":`, err.message || err);
+  }
+
+  // Attempt 4: Search Curated Offline Catalog with strict matching (no fake synthetic tracks)
   const offlineResults = performOfflineFuzzySearch(query);
   return res.json({ success: true, results: offlineResults, source: 'offline-catalog' });
+});
+
+// 2.5 Spotify-style Mood & Recommendation API
+app.get('/api/recommendations', async (req, res) => {
+  const songId = req.query.songId as string;
+  const title = (req.query.title as string) || '';
+  const artist = (req.query.artist as string) || '';
+  const language = (req.query.language as string) || 'Telugu';
+  const mood = (req.query.mood as string) || 'party';
+
+  try {
+    // Search query customized for matching the vibe
+    let searchQuery = '';
+    if (mood === 'sad') {
+      searchQuery = `${language} sad emotional heartbreak songs ${artist}`;
+    } else if (mood === 'party') {
+      searchQuery = `${language} dance party mass songs ${artist}`;
+    } else if (mood === 'hype') {
+      searchQuery = `${language} mass background music hero theme ${artist}`;
+    } else {
+      searchQuery = `${language} romantic love melody songs ${artist}`;
+    }
+
+    // Try Saavn Mirror or JioSaavn
+    const mirrorUrl = `https://saavn.dev/api/search/songs?query=${encodeURIComponent(searchQuery)}&page=1&limit=15`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3500);
+
+    const mirrorRes = await fetch(mirrorUrl, { signal: controller.signal });
+    clearTimeout(timeout);
+
+    if (mirrorRes.ok) {
+      const mirrorData = await mirrorRes.json();
+      const list = mirrorData.data?.results || mirrorData.results || [];
+      if (Array.isArray(list) && list.length > 0) {
+        const mirrorSongs: any[] = [];
+        for (const item of list) {
+          if (item.id === songId) continue;
+          const downloadList = item.downloadUrl || [];
+          const bestAudio =
+            downloadList.find((d: any) => d.quality === '320kbps')?.url ||
+            downloadList.find((d: any) => d.quality === '160kbps')?.url ||
+            downloadList[downloadList.length - 1]?.url ||
+            item.url;
+
+          if (bestAudio) {
+            const durSec = parseInt(item.duration || '210', 10);
+            const mins = Math.floor(durSec / 60);
+            const secs = durSec % 60;
+            const durationStr = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+
+            const images = item.image || [];
+            const cover =
+              (Array.isArray(images) ? images[images.length - 1]?.url : images) ||
+              'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500';
+
+            const artistName =
+              item.artists?.primary?.[0]?.name ||
+              item.primaryArtists ||
+              item.artist ||
+              'Artist';
+
+            mirrorSongs.push({
+              id: item.id || `reco-${Math.random()}`,
+              title: cleanHtml(item.name || item.title),
+              artist: cleanHtml(artistName),
+              album: cleanHtml(item.album?.name || item.album || item.name || 'Single'),
+              duration: durationStr,
+              durationSec: durSec,
+              coverUrl: cover,
+              audioUrl: bestAudio,
+              downloadUrl: `/api/download?url=${encodeURIComponent(bestAudio)}&title=${encodeURIComponent(cleanHtml(item.name || item.title))}&artist=${encodeURIComponent(cleanHtml(artistName))}`,
+              quality: '320kbps HD',
+              year: item.year || '2024',
+              language: item.language || language,
+              mood: mood,
+            });
+          }
+        }
+
+        if (mirrorSongs.length > 0) {
+          return res.json({ success: true, results: mirrorSongs, source: 'reco-live' });
+        }
+      }
+    }
+  } catch (err: any) {
+    console.warn('Live recommendation fetch failed, returning empty for client fallback:', err.message || err);
+  }
+
+  return res.json({ success: true, results: [], source: 'client-fallback' });
 });
 
 // 3. Audio Download Proxy (Bypasses CORS and downloads directly to user's device)

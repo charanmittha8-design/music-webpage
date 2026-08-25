@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { Song, RepeatMode } from '../types';
 import { formatTime, downloadSong, getMockLyrics } from '../services/musicApi';
+import { detectSongMood } from '../data/musicData';
 import { SafeImage } from './SafeImage';
 
 interface FloatingPlayerProps {
@@ -208,12 +209,22 @@ export const FloatingPlayer: React.FC<FloatingPlayerProps> = ({
             <button
               id="mini-player-like-btn"
               onClick={() => onToggleFavorite(currentSong)}
-              className={`p-2 rounded-full hover:bg-white/10 transition-colors ${
+              className={`p-1.5 sm:p-2 rounded-full hover:bg-white/10 transition-colors ${
                 isFavorite ? 'text-[#1db954]' : 'text-zinc-400 hover:text-white'
               }`}
               title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
             >
               <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current text-[#1db954]' : ''}`} />
+            </button>
+
+            {/* Previous */}
+            <button
+              id="mini-player-prev-btn"
+              onClick={onPrev}
+              className="p-1.5 sm:p-2 text-zinc-400 hover:text-white rounded-full hover:bg-white/10 transition-colors"
+              title="Previous Track"
+            >
+              <SkipBack className="w-4 h-4 fill-current" />
             </button>
 
             {/* Play/Pause */}
@@ -234,7 +245,7 @@ export const FloatingPlayer: React.FC<FloatingPlayerProps> = ({
             <button
               id="mini-player-next-btn"
               onClick={onNext}
-              className="p-2 text-zinc-400 hover:text-white rounded-full hover:bg-white/10 transition-colors"
+              className="p-1.5 sm:p-2 text-zinc-400 hover:text-white rounded-full hover:bg-white/10 transition-colors"
               title="Next Track"
             >
               <SkipForward className="w-4 h-4 fill-current" />
@@ -368,11 +379,28 @@ export const FloatingPlayer: React.FC<FloatingPlayerProps> = ({
             </div>
 
             {/* Quality & Audio Spec Pill */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#1db954]/15 border border-[#1db954]/30 text-[#1db954] text-[10px] font-black tracking-wider uppercase">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#1db954] animate-pulse" />
                 320kbps Studio Master
               </span>
+              {(() => {
+                const mood = detectSongMood(currentSong);
+                const moodLabels: Record<string, { label: string; icon: string; style: string }> = {
+                  party: { label: 'Party & Mass Vibe', icon: '🎉', style: 'bg-red-500/20 text-red-300 border-red-500/30' },
+                  sad: { label: 'Sad & Emotional Vibe', icon: '💔', style: 'bg-blue-500/20 text-blue-300 border-blue-500/30' },
+                  romantic: { label: 'Romantic Melody', icon: '❤️', style: 'bg-pink-500/20 text-pink-300 border-pink-500/30' },
+                  hype: { label: 'Mass Swagger BGM', icon: '⚡', style: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
+                  chill: { label: 'Acoustic Chill', icon: '🌙', style: 'bg-purple-500/20 text-purple-300 border-purple-500/30' },
+                };
+                const item = moodLabels[mood] || moodLabels.party;
+                return (
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[10px] font-bold ${item.style}`}>
+                    <span>{item.icon}</span>
+                    <span>{item.label}</span>
+                  </span>
+                );
+              })()}
               {currentSong.isOffline && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 text-[10px] font-bold">
                   ⚡ 0-Data Offline Vault

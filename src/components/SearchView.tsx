@@ -104,7 +104,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
             <Compass className="w-5 h-5 text-[#1db954]" />
           </h1>
           <p className="text-xs text-zinc-400 mt-0.5">
-            Full 320kbps Telugu, Hindi, English songs & downloads
+            Full 320kbps Telugu, Hindi, Tamil, Malayalam & all Indian songs
           </p>
         </div>
       </div>
@@ -116,7 +116,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
           <input
             id="search-input-field"
             type="text"
-            placeholder="Search songs, artists, Telugu, Bollywood..."
+            placeholder="Search songs, artists, Telugu, Bollywood, Tamil, Malayalam..."
             value={localInput}
             onChange={(e) => setLocalInput(e.target.value)}
             className="w-full bg-transparent border-none text-white text-xs sm:text-sm py-2 outline-none placeholder:text-zinc-500"

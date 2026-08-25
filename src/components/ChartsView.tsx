@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TrendingUp, Play, Trophy, Download, CheckCircle2, Loader2, Globe2 } from 'lucide-react';
+import { TrendingUp, Play, Trophy, Download, CheckCircle2, Loader2 } from 'lucide-react';
 import { Song } from '../types';
 import { CURATED_TRACKS } from '../data/musicData';
 import { downloadSong } from '../services/musicApi';
@@ -20,21 +20,25 @@ export const ChartsView: React.FC<ChartsViewProps> = ({
   onRequestDownload,
   onShowToast,
 }) => {
-  const [activeCategory, setActiveCategory] = useState<'all' | 'english' | 'telugu' | 'hindi'>('all');
+  const [activeCategory, setActiveCategory] = useState<'all' | 'telugu' | 'hindi' | 'south' | 'punjabi'>('all');
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [downloadedIds, setDownloadedIds] = useState<Set<string>>(new Set());
 
   const categories = [
-    { id: 'all', label: '🔥 All Top Charts' },
-    { id: 'english', label: '🌍 Global English & Billboard' },
+    { id: 'all', label: '🔥 All Indian Hits' },
     { id: 'telugu', label: '⚡ Telugu Superhits' },
     { id: 'hindi', label: '🌟 Bollywood Romance' },
+    { id: 'south', label: '🌴 Tamil, Malayalam & Kannada' },
+    { id: 'punjabi', label: '🥁 Punjabi & Regional' },
   ];
 
   const filteredTracks = CURATED_TRACKS.filter((track) => {
-    if (activeCategory === 'english') return track.language === 'English';
-    if (activeCategory === 'telugu') return track.language === 'Telugu' || track.artist.includes('Devi') || track.artist.includes('Anirudh');
+    if (activeCategory === 'telugu') return track.language === 'Telugu';
     if (activeCategory === 'hindi') return track.language === 'Hindi';
+    if (activeCategory === 'south') {
+      return track.language === 'Tamil' || track.language === 'Malayalam' || track.language === 'Kannada';
+    }
+    if (activeCategory === 'punjabi') return track.language === 'Punjabi';
     return true;
   });
 
@@ -66,11 +70,11 @@ export const ChartsView: React.FC<ChartsViewProps> = ({
       <div className="flex items-center justify-between pt-1">
         <div>
           <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2">
-            <span>Trending Charts</span>
+            <span>Trending Indian Charts</span>
             <TrendingUp className="w-5 h-5 text-[#1db954]" />
           </h1>
           <p className="text-xs text-zinc-400 mt-0.5">
-            Real-time charts: Telugu, Global English & Bollywood
+            Real-time charts: Telugu, Bollywood, Tamil, Malayalam, Kannada & Punjabi
           </p>
         </div>
         <button
@@ -156,7 +160,7 @@ export const ChartsView: React.FC<ChartsViewProps> = ({
                     {song.title}
                   </p>
                   <p className="text-[10px] sm:text-[11px] text-zinc-400 truncate mt-0.5">
-                    {song.artist} • <span className="text-zinc-500">{song.language || 'English'}</span>
+                    {song.artist} • <span className="text-zinc-500">{song.language || 'Indian'}</span>
                   </p>
                 </div>
               </div>

@@ -76,40 +76,15 @@ function localFuzzySearch(query: string): Song[] {
     return { song, score };
   });
 
-  const matched = scored
+  return scored
     .filter((item) => item.score > 0)
     .sort((a, b) => b.score - a.score)
     .map((item) => item.song);
-
-  if (matched.length > 0) return matched;
-
-  // Synthesize a playable track using standard fallback stream so it never crashes
-  const formattedTitle = query
-    .split(' ')
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
-
-  const fallbackSong: Song = {
-    id: `offline-${Date.now()}`,
-    title: formattedTitle,
-    artist: 'High Fidelity Mix',
-    album: 'Trending Chartbuster',
-    duration: '3:30',
-    durationSec: 210,
-    coverUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500',
-    audioUrl: CURATED_TRACKS[0].audioUrl,
-    downloadUrl: CURATED_TRACKS[0].downloadUrl,
-    quality: '320kbps HD',
-    year: '2025',
-    language: 'Music',
-  };
-
-  return [fallbackSong, ...CURATED_TRACKS];
 }
 
 /**
  * Search full songs with 320kbps audio.
- * Queries backend proxy /api/search (handling JioSaavn + iTunes) with guaranteed local offline fallback.
+ * Queries backend proxy /api/search (handling JioSaavn + Saavn mirror + iTunes) with guaranteed local offline fallback.
  */
 export async function searchSongs(query: string): Promise<Song[]> {
   const trimmed = query.trim();
@@ -135,67 +110,118 @@ export async function searchSongs(query: string): Promise<Song[]> {
     console.warn('Backend /api/search unreachable, trying direct client-side fallback:', err);
   }
 
-  // 2. Secondary: Direct client-side JioSaavn API fetch (Full length 320kbps)
+  // 2. Secondary: Direct client-side Saavn Mirror API (CORS-friendly)
   try {
-    const saavnUrl = `https://www.jiosaavn.com/api.php?__call=search.getResults&_format=json&_marker=0&api_version=4&ctx=web6dot0&n=25&p=1&q=${encodeURIComponent(
-      trimmed
-    )}`;
-
+    const mirrorUrl = `https://saavn.dev/api/search/songs?query=${encodeURIComponent(trimmed)}&page=1&limit=25`;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 4000);
 
-    const saavnRes = await fetch(saavnUrl, { signal: controller.signal });
+    const mirrorRes = await fetch(mirrorUrl, { signal: controller.signal });
     clearTimeout(timeout);
 
-    if (saavnRes.ok) {
-      const data = await saavnRes.json();
-      const results = data.results || [];
-      if (results.length > 0) {
-        const fullSongs: Song[] = [];
-        for (const s of results) {
-          const encrypted = s.more_info?.encrypted_media_url;
-          const decryptedAudio = decryptSaavnMediaUrl(encrypted, '320');
-          if (decryptedAudio) {
-            const durSec = parseInt(s.more_info?.duration || '210', 10);
+    if (mirrorRes.ok) {
+      const mirrorData = await mirrorRes.json();
+      const list = mirrorData.data?.results || mirrorData.results || [];
+      if (Array.isArray(list) && list.length > 0) {
+        const mirrorSongs: Song[] = [];
+        for (const item of list) {
+          const downloadList = item.downloadUrl || [];
+          const bestAudio =
+            downloadList.find((d: any) => d.quality === '320kbps')?.url ||
+            downloadList.find((d: any) => d.quality === '160kbps')?.url ||
+            downloadList[downloadList.length - 1]?.url ||
+            item.url;
+
+          if (bestAudio) {
+            const durSec = parseInt(item.duration || '210', 10);
             const mins = Math.floor(durSec / 60);
             const secs = durSec % 60;
             const durationStr = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-            const cover = (s.image || '')
-              .replace('150x150', '500x500')
-              .replace('50x50', '500x500')
-              .replace('http:', 'https:');
-            const primaryArtist =
-              s.more_info?.artistMap?.primary_artists?.[0]?.name ||
-              s.subtitle ||
-              s.more_info?.singers ||
-              'Unknown Artist';
 
-            fullSongs.push({
-              id: s.id || `s-${Math.random()}`,
-              title: cleanHtml(s.title),
-              artist: cleanHtml(primaryArtist),
-              album: cleanHtml(s.more_info?.album || s.title),
+            const images = item.image || [];
+            const cover =
+              (Array.isArray(images) ? images[images.length - 1]?.url : images) ||
+              'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500';
+
+            const artistName =
+              item.artists?.primary?.[0]?.name ||
+              item.primaryArtists ||
+              item.artist ||
+              'Artist';
+
+            mirrorSongs.push({
+              id: item.id || `mirror-${Math.random()}`,
+              title: cleanHtml(item.name || item.title),
+              artist: cleanHtml(artistName),
+              album: cleanHtml(item.album?.name || item.album || item.name || 'Single'),
               duration: durationStr,
               durationSec: durSec,
-              coverUrl: cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500',
-              audioUrl: decryptedAudio,
-              downloadUrl: `/api/download?url=${encodeURIComponent(decryptedAudio)}&title=${encodeURIComponent(cleanHtml(s.title))}&artist=${encodeURIComponent(cleanHtml(primaryArtist))}`,
+              coverUrl: cover,
+              audioUrl: bestAudio,
+              downloadUrl: `/api/download?url=${encodeURIComponent(bestAudio)}&title=${encodeURIComponent(cleanHtml(item.name || item.title))}&artist=${encodeURIComponent(cleanHtml(artistName))}`,
               quality: '320kbps HD',
-              year: s.year || s.more_info?.release_date?.substring(0, 4) || '2024',
-              language: s.language || 'Music',
+              year: item.year || '2024',
+              language: item.language || 'Music',
             });
           }
         }
-        if (fullSongs.length > 0) {
-          return fullSongs;
+        if (mirrorSongs.length > 0) {
+          return mirrorSongs;
         }
       }
     }
   } catch (err) {
-    console.warn('Client-side JioSaavn direct search note:', err);
+    console.warn('Client-side mirror search note:', err);
   }
 
-  // 3. Tertiary: Local fuzzy search over complete verified full-length catalog
+  // 3. Tertiary: Direct client-side iTunes API fetch (100% available globally)
+  try {
+    const itunesUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(trimmed)}&entity=song&limit=25`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+
+    const itunesRes = await fetch(itunesUrl, { signal: controller.signal });
+    clearTimeout(timeout);
+
+    if (itunesRes.ok) {
+      const itunesData = await itunesRes.json();
+      const itunesList = itunesData.results || [];
+      if (Array.isArray(itunesList) && itunesList.length > 0) {
+        const itunesSongs: Song[] = itunesList
+          .filter((item: any) => item.previewUrl)
+          .map((item: any) => {
+            const durSec = Math.floor((item.trackTimeMillis || 210000) / 1000);
+            const mins = Math.floor(durSec / 60);
+            const secs = durSec % 60;
+            const durationStr = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+            const cover = (item.artworkUrl100 || '').replace('100x100bb', '600x600bb');
+
+            return {
+              id: `itunes-${item.trackId || Math.random()}`,
+              title: item.trackName || item.collectionName || 'Track',
+              artist: item.artistName || 'Artist',
+              album: item.collectionName || item.trackName || 'Album',
+              duration: durationStr,
+              durationSec: durSec,
+              coverUrl: cover || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500',
+              audioUrl: item.previewUrl,
+              downloadUrl: `/api/download?url=${encodeURIComponent(item.previewUrl)}&title=${encodeURIComponent(item.trackName || 'Song')}&artist=${encodeURIComponent(item.artistName || 'Artist')}`,
+              quality: 'HD Audio',
+              year: (item.releaseDate || '').substring(0, 4) || '2024',
+              language: item.primaryGenreName || 'Music',
+            };
+          });
+
+        if (itunesSongs.length > 0) {
+          return itunesSongs;
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Client-side iTunes search note:', err);
+  }
+
+  // 4. Local fuzzy search over verified catalog (no fake tracks)
   return localFuzzySearch(trimmed);
 }
 
@@ -264,6 +290,27 @@ export async function downloadSong(
     console.warn('Download error:', error);
     return false;
   }
+}
+
+/**
+ * Fetch mood and vibe-matched recommendations from backend or fallback to smart client engine
+ */
+export async function fetchMoodRecommendations(song: Song): Promise<Song[]> {
+  try {
+    const mood = song.mood || 'party';
+    const res = await fetch(
+      `/api/recommendations?songId=${encodeURIComponent(song.id)}&title=${encodeURIComponent(song.title)}&artist=${encodeURIComponent(song.artist)}&language=${encodeURIComponent(song.language || 'Telugu')}&mood=${encodeURIComponent(mood)}`
+    );
+    if (res.ok) {
+      const data = await res.json();
+      if (data.success && Array.isArray(data.results) && data.results.length > 0) {
+        return data.results;
+      }
+    }
+  } catch (err) {
+    console.warn('Mood recommendation fetch warning:', err);
+  }
+  return [];
 }
 
 export function formatTime(seconds: number): string {

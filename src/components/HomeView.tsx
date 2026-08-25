@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, Flame, Clock, Radio, Music, Sparkles, Globe2, Sparkle, Shuffle } from 'lucide-react';
+import { Play, Flame, Clock, Radio, Music, Sparkles, Shuffle } from 'lucide-react';
 import { Song, QuickMix, OfflineSong } from '../types';
 import { QUICK_MIXES, CURATED_TRACKS } from '../data/musicData';
 import { SafeImage } from './SafeImage';
@@ -32,23 +32,19 @@ export const HomeView: React.FC<HomeViewProps> = ({
     const shuffled = [...CURATED_TRACKS].sort(() => Math.random() - 0.5);
     if (shuffled.length > 0) {
       onPlaySong(shuffled[0], shuffled);
-      onShowToast?.(`🔀 Shuffling 320kbps studio mix!`);
+      onShowToast?.(`🔀 Shuffling 320kbps Indian studio mix!`);
     }
   };
 
-  // Group Tracks for Clean Sections
+  // Group Indian Tracks for Clean Sections
   const newArrivals = CURATED_TRACKS.filter(
     (s) => s.year === '2024' || s.year === '2025' || s.year === '2026'
-  ).slice(0, 8);
+  );
 
-  const englishHits = CURATED_TRACKS.filter((s) => s.language === 'English');
-
-  const teluguHits = CURATED_TRACKS.filter(
-    (s) =>
-      s.language === 'Telugu' ||
-      s.artist.includes('Devi') ||
-      s.artist.includes('Thaman') ||
-      s.artist.includes('Anirudh')
+  const teluguHits = CURATED_TRACKS.filter((s) => s.language === 'Telugu');
+  const hindiHits = CURATED_TRACKS.filter((s) => s.language === 'Hindi');
+  const southPanIndiaHits = CURATED_TRACKS.filter(
+    (s) => s.language === 'Tamil' || s.language === 'Malayalam' || s.language === 'Kannada' || s.language === 'Punjabi'
   );
 
   return (
@@ -56,14 +52,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
       {/* 1. Header & Quick Shuffle */}
       <div className="flex items-center justify-between pt-1">
         <div>
-          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2">
-            <span>Discover Music</span>
-            <span className="text-[10px] uppercase font-black px-1.5 py-0.5 rounded bg-[#1db954]/20 text-[#1db954] border border-[#1db954]/30">
-              HD 320k
-            </span>
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+            Discover Indian Music
           </h1>
           <p className="text-xs text-zinc-400 mt-0.5">
-            Full Studio Audio • Telugu, Hindi & English Hits
+            Full Studio Audio • Telugu, Hindi, Tamil, Malayalam, Kannada & Punjabi
           </p>
         </div>
 
@@ -71,25 +64,22 @@ export const HomeView: React.FC<HomeViewProps> = ({
           id="home-shuffle-play-btn"
           onClick={handleShufflePlay}
           className="flex items-center gap-1.5 text-xs font-extrabold px-3.5 py-2 rounded-full bg-[#1db954] hover:bg-[#22c55e] text-black transition-all shadow-md active:scale-95"
-          title="Shuffle and play all curated hits"
+          title="Shuffle and play all curated Indian hits"
         >
           <Shuffle className="w-3.5 h-3.5" />
           <span>Shuffle All</span>
         </button>
       </div>
 
-      {/* 2. 🌟 NEW ARRIVALS & FRESH RELEASES (Clean Banner Cards Carousel) */}
+      {/* 2. 🌟 NEW INDIAN ARRIVALS & FRESH RELEASES (Clean Banner Cards Carousel) */}
       <div>
         <div className="flex items-center justify-between mb-2.5">
           <div className="flex items-center gap-1.5">
             <Sparkles className="w-4 h-4 text-amber-400" />
             <h2 className="text-sm font-extrabold text-white uppercase tracking-wider">
-              New Arrivals & Fresh Releases
+              New Indian Arrivals & Fresh Releases
             </h2>
           </div>
-          <span className="text-[10px] text-zinc-500 font-semibold px-2 py-0.5 rounded-full bg-white/5">
-            Latest 2024-2025
-          </span>
         </div>
 
         <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
@@ -139,7 +129,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
                 <div className="flex items-center justify-between mt-2 pt-1 border-t border-white/[0.04]">
                   <span className="text-[9px] text-[#1db954] font-bold">
-                    {song.language || 'English'}
+                    {song.language || 'Indian'}
                   </span>
                   <span className="text-[9px] text-zinc-500 font-mono">
                     320kbps
@@ -151,76 +141,17 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       </div>
 
-      {/* 3. 🌍 GLOBAL ENGLISH & BILLBOARD HITS (Brand New Section) */}
-      {englishHits.length > 0 && (
-        <div>
-          <div className="flex items-center justify-between mb-2.5">
-            <div className="flex items-center gap-1.5">
-              <Globe2 className="w-4 h-4 text-sky-400" />
-              <h2 className="text-sm font-extrabold text-white uppercase tracking-wider">
-                Global English & Billboard Hits
-              </h2>
-            </div>
-            <button
-              onClick={() => onPlaySong(englishHits[0], englishHits)}
-              className="text-[11px] text-[#1db954] hover:underline font-bold"
-            >
-              Play All
-            </button>
-          </div>
-
-          <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
-            {englishHits.map((song) => {
-              const isThisCurrent = currentSong?.id === song.id && isPlaying;
-              return (
-                <div
-                  key={`english-${song.id}`}
-                  id={`english-song-${song.id}`}
-                  onClick={() => onPlaySong(song, englishHits)}
-                  className="group flex-shrink-0 w-28 sm:w-32 cursor-pointer select-none"
-                >
-                  <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-xl overflow-hidden shadow-md border border-white/5 group-hover:border-sky-400/50 transition-all bg-[#15151e]">
-                    <SafeImage
-                      src={song.coverUrl}
-                      alt={song.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                    />
-                    <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                      <div className="w-8 h-8 rounded-full bg-[#1db954] flex items-center justify-center text-black shadow-lg">
-                        <Play className="w-3.5 h-3.5 fill-current translate-x-0.5" />
-                      </div>
-                    </div>
-                    {isThisCurrent && (
-                      <div className="absolute bottom-1.5 right-1.5 bg-black/70 backdrop-blur-sm px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                        <span className="w-1 h-2.5 bg-[#1db954] rounded-full animate-wave-1" />
-                        <span className="w-1 h-2.5 bg-[#1db954] rounded-full animate-wave-2" />
-                      </div>
-                    )}
-                  </div>
-                  <p className="mt-1.5 text-xs font-semibold text-white truncate group-hover:text-sky-300 transition-colors">
-                    {song.title}
-                  </p>
-                  <p className="text-[10px] text-zinc-400 truncate mt-0.5">
-                    {song.artist}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* 4. ⚡ Quick Mix Radios (Clean 4-column quick stations) */}
+      {/* 3. ⚡ Quick Mix Radios (Clean 4-column quick stations) */}
       <div>
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-xs font-extrabold text-white uppercase tracking-wider flex items-center gap-1.5">
-            <span>⚡</span> Quick Mix Radios
+            <span>⚡</span> Indian Quick Mix Radios
           </h2>
           <span className="text-[10px] text-zinc-500 font-medium">1-Tap Stations</span>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {QUICK_MIXES.slice(0, 4).map((mix) => (
+          {QUICK_MIXES.map((mix) => (
             <div
               key={mix.id}
               id={`quick-mix-${mix.id}`}
@@ -240,7 +171,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       </div>
 
-      {/* 5. 🎬 Telugu Cinema Blockbusters */}
+      {/* 4. 🎬 Telugu Cinema Blockbusters */}
       {teluguHits.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-2">
@@ -295,7 +226,117 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       )}
 
-      {/* 6. ⏱️ Jump Back In (Recent Tracks if any) */}
+      {/* 5. 🌟 Bollywood & Hindi Chartbusters */}
+      {hindiHits.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-xs font-extrabold text-white uppercase tracking-wider flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-rose-400" /> Bollywood Romance & Melodies
+            </h2>
+            <button
+              onClick={() => onPlaySong(hindiHits[0], hindiHits)}
+              className="text-[10px] text-[#1db954] hover:underline font-bold"
+            >
+              Play All
+            </button>
+          </div>
+
+          <div className="flex gap-2.5 overflow-x-auto pb-1 no-scrollbar">
+            {hindiHits.map((song) => {
+              const isThisCurrent = currentSong?.id === song.id && isPlaying;
+              return (
+                <div
+                  key={`hindi-${song.id}`}
+                  onClick={() => onPlaySong(song, hindiHits)}
+                  className="group flex-shrink-0 w-24 sm:w-28 cursor-pointer select-none"
+                >
+                  <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden shadow-md border border-white/5 group-hover:border-rose-400/50 transition-all bg-[#14141c]">
+                    <SafeImage
+                      src={song.coverUrl}
+                      alt={song.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                    />
+                    <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                      <div className="w-8 h-8 rounded-full bg-[#1db954] flex items-center justify-center text-black shadow-lg">
+                        <Play className="w-3.5 h-3.5 fill-current translate-x-0.5" />
+                      </div>
+                    </div>
+                    {isThisCurrent && (
+                      <div className="absolute bottom-1.5 right-1.5 bg-black/70 backdrop-blur-sm px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                        <span className="w-1 h-2.5 bg-[#1db954] rounded-full animate-wave-1" />
+                        <span className="w-1 h-2.5 bg-[#1db954] rounded-full animate-wave-2" />
+                      </div>
+                    )}
+                  </div>
+                  <p className="mt-1.5 text-xs font-semibold text-white truncate group-hover:text-rose-300">
+                    {song.title}
+                  </p>
+                  <p className="text-[10px] text-zinc-400 truncate mt-0.5">
+                    {song.artist}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 6. ⚡ South & Pan-India Hits (Tamil, Malayalam, Kannada, Punjabi) */}
+      {southPanIndiaHits.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-xs font-extrabold text-white uppercase tracking-wider flex items-center gap-1.5">
+              <Music className="w-3.5 h-3.5 text-amber-400" /> Tamil, Malayalam, Kannada & Punjabi
+            </h2>
+            <button
+              onClick={() => onPlaySong(southPanIndiaHits[0], southPanIndiaHits)}
+              className="text-[10px] text-[#1db954] hover:underline font-bold"
+            >
+              Play All
+            </button>
+          </div>
+
+          <div className="flex gap-2.5 overflow-x-auto pb-1 no-scrollbar">
+            {southPanIndiaHits.map((song) => {
+              const isThisCurrent = currentSong?.id === song.id && isPlaying;
+              return (
+                <div
+                  key={`pan-india-${song.id}`}
+                  onClick={() => onPlaySong(song, southPanIndiaHits)}
+                  className="group flex-shrink-0 w-24 sm:w-28 cursor-pointer select-none"
+                >
+                  <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden shadow-md border border-white/5 group-hover:border-amber-400/50 transition-all bg-[#14141c]">
+                    <SafeImage
+                      src={song.coverUrl}
+                      alt={song.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                    />
+                    <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                      <div className="w-8 h-8 rounded-full bg-[#1db954] flex items-center justify-center text-black shadow-lg">
+                        <Play className="w-3.5 h-3.5 fill-current translate-x-0.5" />
+                      </div>
+                    </div>
+                    {isThisCurrent && (
+                      <div className="absolute bottom-1.5 right-1.5 bg-black/70 backdrop-blur-sm px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                        <span className="w-1 h-2.5 bg-[#1db954] rounded-full animate-wave-1" />
+                        <span className="w-1 h-2.5 bg-[#1db954] rounded-full animate-wave-2" />
+                      </div>
+                    )}
+                  </div>
+                  <p className="mt-1.5 text-xs font-semibold text-white truncate group-hover:text-amber-300">
+                    {song.title}
+                  </p>
+                  <p className="text-[10px] text-zinc-400 truncate mt-0.5">
+                    {song.artist}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 7. ⏱️ Jump Back In (Recent Tracks if any) */}
       {recentTracks.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-2">
@@ -346,11 +387,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       )}
 
-      {/* 7. 🔥 Trending Chartbusters Top List */}
+      {/* 8. 🔥 Trending Indian Chartbusters Top List */}
       <div>
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-xs font-extrabold text-white uppercase tracking-wider flex items-center gap-1.5">
-            <Flame className="w-3.5 h-3.5 text-orange-500" /> Trending Chartbusters
+            <Flame className="w-3.5 h-3.5 text-orange-500" /> Trending Indian Chartbusters
           </h2>
           <button
             onClick={() => onPlaySong(CURATED_TRACKS[0], CURATED_TRACKS)}
@@ -361,7 +402,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
 
         <div className="space-y-1">
-          {CURATED_TRACKS.slice(0, 8).map((song, index) => {
+          {CURATED_TRACKS.map((song, index) => {
             const isCurrent = currentSong?.id === song.id;
 
             return (
@@ -397,7 +438,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                       {song.title}
                     </p>
                     <p className="text-[10px] text-zinc-400 truncate mt-0.5">
-                      {song.artist} • <span className="text-zinc-500">{song.language || 'English'}</span>
+                      {song.artist} • <span className="text-zinc-500">{song.language || 'Indian'}</span>
                     </p>
                   </div>
                 </div>

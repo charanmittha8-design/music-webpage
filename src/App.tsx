@@ -29,17 +29,17 @@ export const App: React.FC = () => {
     typeof navigator !== 'undefined' ? navigator.onLine : true
   );
 
-  // Audio Playback State
-  const [currentSong, setCurrentSong] = useState<Song | null>(() => CURATED_TRACKS[0]);
+  // Audio Playback State (Device-isolated, no default auto-selected song)
+  const [currentSong, setCurrentSong] = useState<Song | null>(null);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [currentTime, setCurrentTime] = useState<number>(0);
-  const [duration, setDuration] = useState<number>(() => CURATED_TRACKS[0].durationSec || 256);
+  const [duration, setDuration] = useState<number>(0);
   const [volume, setVolume] = useState<number>(0.85);
   const [repeatMode, setRepeatMode] = useState<RepeatMode>('all');
   const [isShuffle, setIsShuffle] = useState<boolean>(false);
 
   // Queue & Track Lists
-  const [queue, setQueue] = useState<Song[]>(() => CURATED_TRACKS);
+  const [queue, setQueue] = useState<Song[]>([]);
 
   // Search State
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -63,18 +63,18 @@ export const App: React.FC = () => {
   const [recentTracks, setRecentTracks] = useState<Song[]>(() => {
     try {
       const saved = localStorage.getItem('charan_recent_tracks');
-      return saved ? JSON.parse(saved) : CURATED_TRACKS.slice(0, 5);
+      return saved ? JSON.parse(saved) : [];
     } catch {
-      return CURATED_TRACKS.slice(0, 5);
+      return [];
     }
   });
 
   const [favorites, setFavorites] = useState<Song[]>(() => {
     try {
       const saved = localStorage.getItem('charan_favorites');
-      return saved ? JSON.parse(saved) : CURATED_TRACKS.slice(0, 3);
+      return saved ? JSON.parse(saved) : [];
     } catch {
-      return CURATED_TRACKS.slice(0, 3);
+      return [];
     }
   });
 
@@ -224,58 +224,6 @@ export const App: React.FC = () => {
     };
   }, []);
 
-  // Update Source when currentSong changes
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio || !currentSong) return;
-
-    if (currentSong.durationSec) {
-      setDuration(currentSong.durationSec);
-    }
-
-    const prepareAndPlay = async () => {
-      // Check if this song is saved offline in IndexedDB
-      let resolvedSrc = currentSong.audioUrl;
-      const offlineMatch = offlineSongs.find((s) => s.id === currentSong.id);
-      if (offlineMatch?.offlineBlobUrl) {
-        resolvedSrc = offlineMatch.offlineBlobUrl;
-      } else {
-        const offlineBlob = await getOfflineAudioUrl(currentSong.id);
-        if (offlineBlob) {
-          resolvedSrc = offlineBlob;
-        }
-      }
-
-      if (audio.src !== resolvedSrc) {
-        audio.src = resolvedSrc;
-        audio.currentTime = 0;
-        setCurrentTime(0);
-        if (isPlaying) {
-          audio.play().catch((err) => {
-            console.warn('Playback resume notice:', err);
-          });
-        }
-      }
-    };
-
-    prepareAndPlay();
-  }, [currentSong, offlineSongs]);
-
-  // Play / Pause toggle
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio || !currentSong) return;
-
-    if (isPlaying) {
-      audio.play().catch((err) => {
-        console.warn('Play request interrupted:', err);
-        setIsPlaying(false);
-      });
-    } else {
-      audio.pause();
-    }
-  }, [isPlaying]);
-
   // Volume handler
   const handleVolumeChange = (newVol: number) => {
     setVolume(newVol);
@@ -284,25 +232,77 @@ export const App: React.FC = () => {
     }
   };
 
-  // Play a specific song
-  const handlePlaySong = async (song: Song, customQueue?: Song[]) => {
-    // Check if song has local offline URL
+  // Play a specific song directly with synchronous browser audio trigger
+  const handlePlaySong = (song: Song, customQueue?: Song[]) => {
+    const audio = audioRef.current;
     const offlineMatch = offlineSongs.find((s) => s.id === song.id);
-    const playableSong = offlineMatch
-      ? { ...song, audioUrl: offlineMatch.offlineBlobUrl || song.audioUrl, isOffline: true }
-      : song;
+    const resolvedSrc = offlineMatch?.offlineBlobUrl || song.audioUrl;
+    const playableSong: Song = {
+      ...song,
+      audioUrl: resolvedSrc,
+      isOffline: Boolean(offlineMatch),
+    };
 
     setCurrentSong(playableSong);
     setIsPlaying(true);
+    setCurrentTime(0);
+    if (song.durationSec) {
+      setDuration(song.durationSec);
+    }
+
+    if (audio) {
+      if (audio.src !== resolvedSrc) {
+        audio.src = resolvedSrc;
+      }
+      audio.currentTime = 0;
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+          console.warn('Playback play request notice:', err);
+        });
+      }
+    }
 
     if (customQueue && customQueue.length > 0) {
       setQueue(customQueue);
-    } else if (!queue.some((s) => s.id === song.id)) {
-      setQueue((prev) => [playableSong, ...prev]);
+    } else {
+      setQueue((prev) => {
+        if (prev.some((s) => s.id === song.id)) return prev;
+        return [playableSong, ...prev];
+      });
     }
 
     // Add to recent tracks (deduped, max 10)
     setRecentTracks((prev) => [playableSong, ...prev.filter((s) => s.id !== song.id)].slice(0, 10));
+  };
+
+  // Play / Pause toggle with immediate user-event execution
+  const handleTogglePlay = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (!currentSong) {
+      if (queue.length > 0) {
+        handlePlaySong(queue[0]);
+      } else if (CURATED_TRACKS.length > 0) {
+        handlePlaySong(CURATED_TRACKS[0]);
+      }
+      return;
+    }
+
+    if (isPlaying) {
+      audio.pause();
+      setIsPlaying(false);
+    } else {
+      setIsPlaying(true);
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+          console.warn('Play interrupted:', err);
+          setIsPlaying(false);
+        });
+      }
+    }
   };
 
   // Next Track Logic
@@ -625,7 +625,7 @@ export const App: React.FC = () => {
           repeatMode={repeatMode}
           isShuffle={isShuffle}
           isFavorite={isCurrentFavorite}
-          onTogglePlay={() => setIsPlaying(!isPlaying)}
+          onTogglePlay={handleTogglePlay}
           onSeek={handleSeek}
           onPrev={handlePrev}
           onNext={handleNext}

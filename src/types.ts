@@ -11,6 +11,8 @@ export interface Song {
   quality?: string;
   year?: string;
   language?: string;
+  mood?: 'party' | 'sad' | 'romantic' | 'hype' | 'chill' | string;
+  genre?: string;
   isFavorite?: boolean;
   isOffline?: boolean;
   offlineBlobUrl?: string;
