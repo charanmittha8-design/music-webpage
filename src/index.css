@@ -1,0 +1,104 @@
+@import "tailwindcss";
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    background-color: #070708;
+    color: #f4f4f5;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    overflow-x: hidden;
+  }
+}
+
+/* Custom Scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Custom Range Slider */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+  height: 4px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+input[type="range"]:hover {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #1db954;
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(29, 185, 84, 0.6);
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.25);
+  background: #22c55e;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #1db954;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 0 8px rgba(29, 185, 84, 0.6);
+}
+
+/* Floating Player Glass Effect */
+.floating-player {
+  background: rgba(18, 18, 24, 0.88);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Bottom Nav Glass Effect */
+.bottom-nav {
+  background: rgba(15, 15, 20, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Audio Visualizer Waves */
+@keyframes sound-wave-1 {
+  0%, 100% { height: 4px; }
+  50% { height: 16px; }
+}
+@keyframes sound-wave-2 {
+  0%, 100% { height: 16px; }
+  50% { height: 6px; }
+}
+@keyframes sound-wave-3 {
+  0%, 100% { height: 8px; }
+  50% { height: 20px; }
+}
+@keyframes sound-wave-4 {
+  0%, 100% { height: 14px; }
+  50% { height: 4px; }
+}
+
+.animate-wave-1 { animation: sound-wave-1 0.8s ease-in-out infinite; }
+.animate-wave-2 { animation: sound-wave-2 0.7s ease-in-out infinite 0.15s; }
+.animate-wave-3 { animation: sound-wave-3 0.9s ease-in-out infinite 0.3s; }
+.animate-wave-4 { animation: sound-wave-4 0.75s ease-in-out infinite 0.2s; }

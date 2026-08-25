@@ -1,0 +1,8 @@
+{
+  "name": "Charan Music",
+  "description": "A high-performance music streaming and downloading application featuring full-length 320kbps song playback, instant search, direct MP3 song downloads, quick mix hubs, personalized recent tracks, audio scrubbing, queue management, and synced lyrics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
