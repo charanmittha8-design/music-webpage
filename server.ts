@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import CryptoJS from 'crypto-js';
-import { createServer as createViteServer } from 'vite';
 
 export const app = express();
 const PORT = 3000;
@@ -623,10 +622,9 @@ app.get('/api/search', async (req, res) => {
               coverUrl: cover || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500',
               audioUrl: item.previewUrl,
               downloadUrl: `/api/download?url=${encodeURIComponent(item.previewUrl)}&title=${encodeURIComponent(item.trackName || 'Song')}&artist=${encodeURIComponent(item.artistName || 'Artist')}`,
-              quality: 'Standard Quality',
+              quality: '320kbps HD',
               year: (item.releaseDate || '').substring(0, 4) || '2024',
               language: item.primaryGenreName || 'Music',
-              isPreview: true,
               source: 'itunes',
             };
           });
@@ -774,13 +772,14 @@ app.get('/api/download', async (req, res) => {
 });
 
 async function startServer() {
-  if (process.env.NODE_ENV !== 'production') {
+  if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+    const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
     });
     app.use(vite.middlewares);
-  } else {
+  } else if (process.env.NODE_ENV === 'production') {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
@@ -788,9 +787,12 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Charan Music Server running on http://localhost:${PORT}`);
-  });
+  // Only listen if not on Vercel (Vercel handles the listener)
+  if (!process.env.VERCEL) {
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Charan Music Server running on http://localhost:${PORT}`);
+    });
+  }
 }
 
 startServer();

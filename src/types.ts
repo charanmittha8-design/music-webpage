@@ -15,7 +15,6 @@ export interface Song {
   genre?: string;
   isFavorite?: boolean;
   isOffline?: boolean;
-  isPreview?: boolean;
   source?: string;
   offlineBlobUrl?: string;
   sizeBytes?: number;
