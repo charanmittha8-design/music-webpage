@@ -451,86 +451,11 @@ app.get('/api/search', async (req, res) => {
     return res.json({ success: true, results: cached.data, source: 'cache' });
   }
 
-  // Attempt 1: JioSaavn Official API with DES decryption
+  // Attempt 1: Reliable Saavn Mirror API (Most stable for Vercel/Production)
   try {
-    const saavnUrl = `https://www.jiosaavn.com/api.php?__call=search.getResults&_format=json&_marker=0&api_version=4&ctx=web6dot0&n=30&p=1&q=${encodeURIComponent(
-      query
-    )}`;
-
+    const mirrorUrl = `https://saavn.dev/api/search/songs?query=${encodeURIComponent(query)}&page=1&limit=25`;
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3500);
-
-    const saavnRes = await fetch(saavnUrl, {
-      signal: controller.signal,
-      headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-        Accept: 'application/json, text/plain, */*',
-        Cookie: 'L=english%2Ctelugu%2Chindi;',
-      },
-    });
-    clearTimeout(timeout);
-
-    if (saavnRes.ok) {
-      const data = await saavnRes.json();
-      const results = data.results || [];
-
-      if (results.length > 0) {
-        const songs: any[] = [];
-        for (const s of results) {
-          const encrypted = s.more_info?.encrypted_media_url;
-          const decryptedAudio = decryptSaavnMediaUrl(encrypted, '320') || decryptSaavnMediaUrl(encrypted, '160');
-
-          if (decryptedAudio) {
-            const durSec = parseInt(s.more_info?.duration || '210', 10);
-            const mins = Math.floor(durSec / 60);
-            const secs = durSec % 60;
-            const durationStr = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-
-            const cover = (s.image || '')
-              .replace('150x150', '500x500')
-              .replace('50x50', '500x500')
-              .replace('http:', 'https:');
-
-            const primaryArtist =
-              s.more_info?.artistMap?.primary_artists?.[0]?.name ||
-              s.subtitle ||
-              s.more_info?.singers ||
-              'Unknown Artist';
-
-            songs.push({
-              id: s.id || `s-${Math.random()}`,
-              title: cleanHtml(s.title),
-              artist: cleanHtml(primaryArtist),
-              album: cleanHtml(s.more_info?.album || s.title),
-              duration: durationStr,
-              durationSec: durSec,
-              coverUrl: cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500',
-              audioUrl: decryptedAudio,
-              downloadUrl: `/api/download?url=${encodeURIComponent(decryptedAudio)}&title=${encodeURIComponent(cleanHtml(s.title))}&artist=${encodeURIComponent(cleanHtml(primaryArtist))}`,
-              quality: '320kbps HD',
-              year: s.year || s.more_info?.release_date?.substring(0, 4) || '2024',
-              language: s.language || 'Music',
-              source: 'jiosaavn-live',
-            });
-          }
-        }
-
-        if (songs.length > 0) {
-          searchCache.set(cacheKey, { timestamp: Date.now(), data: songs });
-          return res.json({ success: true, results: songs, source: 'jiosaavn-live' });
-        }
-      }
-    }
-  } catch (err: any) {
-    console.warn(`JioSaavn search attempt error for "${query}":`, err.message || err);
-  }
-
-  // Attempt 2: Saavn Open Public Mirror API
-  try {
-    const mirrorUrl = `https://saavn.dev/api/search/songs?query=${encodeURIComponent(query)}&page=1&limit=30`;
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3500);
+    const timeout = setTimeout(() => controller.abort(), 6000);
 
     const mirrorRes = await fetch(mirrorUrl, { signal: controller.signal });
     clearTimeout(timeout);
@@ -590,7 +515,73 @@ app.get('/api/search', async (req, res) => {
       }
     }
   } catch (err: any) {
-    console.warn(`Saavn Mirror search attempt error for "${query}":`, err.message || err);
+    console.warn(`Mirror search failed for "${query}":`, err.message);
+  }
+
+  // Attempt 2: Direct JioSaavn API Scraping (Good quality but prone to IP blocks)
+  try {
+    const saavnUrl = `https://www.jiosaavn.com/api.php?__call=search.getResults&_format=json&_marker=0&api_version=4&ctx=web6dot0&n=30&p=1&q=${encodeURIComponent(query)}`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 6000);
+
+    const saavnRes = await fetch(saavnUrl, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Accept': 'application/json, text/plain, */*',
+        'Referer': 'https://www.jiosaavn.com/',
+        'Origin': 'https://www.jiosaavn.com',
+        'Cookie': 'L=english%2Ctelugu%2Chindi%2Ctamil%2Cpunjabi;'
+      },
+    });
+    clearTimeout(timeout);
+
+    if (saavnRes.ok) {
+      const data = await saavnRes.json();
+      const results = data.results || [];
+
+      if (results.length > 0) {
+        const songs: any[] = [];
+        for (const s of results) {
+          const encrypted = s.more_info?.encrypted_media_url;
+          const decryptedAudio = decryptSaavnMediaUrl(encrypted, '320') || decryptSaavnMediaUrl(encrypted, '160');
+
+          if (decryptedAudio) {
+            const durSec = parseInt(s.more_info?.duration || '210', 10);
+            const mins = Math.floor(durSec / 60);
+            const secs = durSec % 60;
+            const durationStr = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+
+            const cover = (s.image || '').replace('150x150', '500x500').replace('50x50', '500x500').replace('http:', 'https:');
+            const primaryArtist = s.more_info?.artistMap?.primary_artists?.[0]?.name || s.subtitle || s.more_info?.singers || 'Unknown Artist';
+
+            songs.push({
+              id: s.id || `s-${Math.random()}`,
+              title: cleanHtml(s.title),
+              artist: cleanHtml(primaryArtist),
+              album: cleanHtml(s.more_info?.album || s.title),
+              duration: durationStr,
+              durationSec: durSec,
+              coverUrl: cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500',
+              audioUrl: decryptedAudio,
+              downloadUrl: `/api/download?url=${encodeURIComponent(decryptedAudio)}&title=${encodeURIComponent(cleanHtml(s.title))}&artist=${encodeURIComponent(cleanHtml(primaryArtist))}`,
+              quality: '320kbps HD',
+              year: s.year || s.more_info?.release_date?.substring(0, 4) || '2024',
+              language: s.language || 'Music',
+              source: 'jiosaavn-live',
+            });
+          }
+        }
+
+        if (songs.length > 0) {
+          searchCache.set(cacheKey, { timestamp: Date.now(), data: songs });
+          return res.json({ success: true, results: songs, source: 'jiosaavn-live' });
+        }
+      }
+    }
+  } catch (err: any) {
+    console.warn(`Direct Saavn failed for "${query}":`, err.message);
   }
 
   // Attempt 3: iTunes Global Search API (Worldwide 100% available)
@@ -625,7 +616,7 @@ app.get('/api/search', async (req, res) => {
               coverUrl: cover || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500',
               audioUrl: item.previewUrl,
               downloadUrl: `/api/download?url=${encodeURIComponent(item.previewUrl)}&title=${encodeURIComponent(item.trackName || 'Song')}&artist=${encodeURIComponent(item.artistName || 'Artist')}`,
-              quality: '30s Preview',
+              quality: 'Standard Quality',
               year: (item.releaseDate || '').substring(0, 4) || '2024',
               language: item.primaryGenreName || 'Music',
               isPreview: true,

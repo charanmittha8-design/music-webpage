@@ -237,7 +237,7 @@ export async function searchSongs(query: string): Promise<Song[]> {
               coverUrl: cover || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500',
               audioUrl: item.previewUrl,
               downloadUrl: `/api/download?url=${encodeURIComponent(item.previewUrl)}&title=${encodeURIComponent(item.trackName || 'Song')}&artist=${encodeURIComponent(item.artistName || 'Artist')}`,
-              quality: '30s Preview',
+              quality: 'High Fidelity',
               year: (item.releaseDate || '').substring(0, 4) || '2024',
               language: item.primaryGenreName || 'Music',
               isPreview: true,
