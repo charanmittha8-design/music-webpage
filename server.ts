@@ -452,70 +452,77 @@ app.get('/api/search', async (req, res) => {
   }
 
   // Attempt 1: Reliable Saavn Mirror API (Most stable for Vercel/Production)
-  try {
-    const mirrorUrl = `https://saavn.dev/api/search/songs?query=${encodeURIComponent(query)}&page=1&limit=25`;
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 6000);
+  const mirrors = [
+    `https://saavn.dev/api/search/songs?query=${encodeURIComponent(query)}&page=1&limit=25`,
+    `https://jiosaavn-api-tau.vercel.app/api/search/songs?query=${encodeURIComponent(query)}&page=1&limit=25`,
+    `https://jiosaavn-api-sigma.vercel.app/api/search/songs?query=${encodeURIComponent(query)}&page=1&limit=25`
+  ];
 
-    const mirrorRes = await fetch(mirrorUrl, { signal: controller.signal });
-    clearTimeout(timeout);
+  for (const mirrorUrl of mirrors) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
 
-    if (mirrorRes.ok) {
-      const mirrorData = await mirrorRes.json();
-      const list = mirrorData.data?.results || mirrorData.results || [];
-      if (Array.isArray(list) && list.length > 0) {
-        const mirrorSongs: any[] = [];
-        for (const item of list) {
-          const downloadList = item.downloadUrl || [];
-          const bestAudio =
-            downloadList.find((d: any) => d.quality === '320kbps')?.url ||
-            downloadList.find((d: any) => d.quality === '160kbps')?.url ||
-            downloadList[downloadList.length - 1]?.url ||
-            item.url;
+      const mirrorRes = await fetch(mirrorUrl, { signal: controller.signal });
+      clearTimeout(timeout);
 
-          if (bestAudio) {
-            const durSec = parseInt(item.duration || '210', 10);
-            const mins = Math.floor(durSec / 60);
-            const secs = durSec % 60;
-            const durationStr = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+      if (mirrorRes.ok) {
+        const mirrorData = await mirrorRes.json();
+        const list = mirrorData.data?.results || mirrorData.results || mirrorData.data || [];
+        if (Array.isArray(list) && list.length > 0) {
+          const mirrorSongs: any[] = [];
+          for (const item of list) {
+            const downloadList = item.downloadUrl || [];
+            const bestAudio =
+              downloadList.find((d: any) => d.quality === '320kbps')?.url ||
+              downloadList.find((d: any) => d.quality === '160kbps')?.url ||
+              downloadList[downloadList.length - 1]?.url ||
+              item.url;
 
-            const images = item.image || [];
-            const cover =
-              (Array.isArray(images) ? images[images.length - 1]?.url : images) ||
-              'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500';
+            if (bestAudio) {
+              const durSec = parseInt(item.duration || '210', 10);
+              const mins = Math.floor(durSec / 60);
+              const secs = durSec % 60;
+              const durationStr = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
 
-            const artistName =
-              item.artists?.primary?.[0]?.name ||
-              item.primaryArtists ||
-              item.artist ||
-              'Artist';
+              const images = item.image || [];
+              const cover =
+                (Array.isArray(images) ? images[images.length - 1]?.url : images) ||
+                'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500';
 
-            mirrorSongs.push({
-              id: item.id || `mirror-${Math.random()}`,
-              title: cleanHtml(item.name || item.title),
-              artist: cleanHtml(artistName),
-              album: cleanHtml(item.album?.name || item.album || item.name || 'Single'),
-              duration: durationStr,
-              durationSec: durSec,
-              coverUrl: cover,
-              audioUrl: bestAudio,
-              downloadUrl: `/api/download?url=${encodeURIComponent(bestAudio)}&title=${encodeURIComponent(cleanHtml(item.name || item.title))}&artist=${encodeURIComponent(cleanHtml(artistName))}`,
-              quality: '320kbps HD',
-              year: item.year || '2024',
-              language: item.language || 'Music',
-              source: 'saavn-mirror',
-            });
+              const artistName =
+                item.artists?.primary?.[0]?.name ||
+                item.primaryArtists ||
+                item.artist ||
+                'Artist';
+
+              mirrorSongs.push({
+                id: item.id || `mirror-${Math.random()}`,
+                title: cleanHtml(item.name || item.title),
+                artist: cleanHtml(artistName),
+                album: cleanHtml(item.album?.name || item.album || item.name || 'Single'),
+                duration: durationStr,
+                durationSec: durSec,
+                coverUrl: cover,
+                audioUrl: bestAudio,
+                downloadUrl: `/api/download?url=${encodeURIComponent(bestAudio)}&title=${encodeURIComponent(cleanHtml(item.name || item.title))}&artist=${encodeURIComponent(cleanHtml(artistName))}`,
+                quality: '320kbps HD',
+                year: item.year || '2024',
+                language: item.language || 'Music',
+                source: 'saavn-mirror',
+              });
+            }
+          }
+
+          if (mirrorSongs.length > 0) {
+            searchCache.set(cacheKey, { timestamp: Date.now(), data: mirrorSongs });
+            return res.json({ success: true, results: mirrorSongs, source: 'saavn-mirror' });
           }
         }
-
-        if (mirrorSongs.length > 0) {
-          searchCache.set(cacheKey, { timestamp: Date.now(), data: mirrorSongs });
-          return res.json({ success: true, results: mirrorSongs, source: 'saavn-mirror' });
-        }
       }
+    } catch (err: any) {
+      console.warn(`Mirror search failed for "${query}" at ${mirrorUrl}:`, err.message);
     }
-  } catch (err: any) {
-    console.warn(`Mirror search failed for "${query}":`, err.message);
   }
 
   // Attempt 2: Direct JioSaavn API Scraping (Good quality but prone to IP blocks)

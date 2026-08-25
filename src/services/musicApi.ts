@@ -111,99 +111,80 @@ export async function searchSongs(query: string): Promise<Song[]> {
   }
 
   // 2. Secondary: Direct client-side Saavn Mirror API (CORS-friendly)
-  try {
-    const mirrorUrl = `https://saavn.dev/api/search/songs?query=${encodeURIComponent(trimmed)}&page=1&limit=25`;
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4000);
+  const mirrorSources = [
+    `https://saavn.dev/api/search/songs?query=${encodeURIComponent(trimmed)}&page=1&limit=25`,
+    `https://jiosaavn-api-tau.vercel.app/api/search/songs?query=${encodeURIComponent(trimmed)}&page=1&limit=25`,
+    `https://jiosaavn-api-sigma.vercel.app/api/search/songs?query=${encodeURIComponent(trimmed)}&page=1&limit=25`
+  ];
 
-    const mirrorRes = await fetch(mirrorUrl, { signal: controller.signal });
-    clearTimeout(timeout);
+  for (const mirrorUrl of mirrorSources) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 4000);
 
-    if (mirrorRes.ok) {
-      const mirrorData = await mirrorRes.json();
-      const list = mirrorData.data?.results || mirrorData.results || [];
-      if (Array.isArray(list) && list.length > 0) {
-        const mirrorSongs: Song[] = [];
-        for (const item of list) {
-          const downloadList = item.downloadUrl || [];
-          const bestAudio =
-            downloadList.find((d: any) => d.quality === '320kbps')?.url ||
-            downloadList.find((d: any) => d.quality === '160kbps')?.url ||
-            downloadList[downloadList.length - 1]?.url ||
-            item.url;
+      const mirrorRes = await fetch(mirrorUrl, { signal: controller.signal });
+      clearTimeout(timeout);
 
-          if (bestAudio) {
-            const durSec = parseInt(item.duration || '210', 10);
-            const mins = Math.floor(durSec / 60);
-            const secs = durSec % 60;
-            const durationStr = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+      if (mirrorRes.ok) {
+        const mirrorData = await mirrorRes.json();
+        const list = mirrorData.data?.results || mirrorData.results || mirrorData.data || [];
+        if (Array.isArray(list) && list.length > 0) {
+          const mirrorSongs: Song[] = [];
+          for (const item of list) {
+            const downloadList = item.downloadUrl || [];
+            const bestAudio =
+              downloadList.find((d: any) => d.quality === '320kbps')?.url ||
+              downloadList.find((d: any) => d.quality === '160kbps')?.url ||
+              downloadList[downloadList.length - 1]?.url ||
+              item.url;
 
-            const images = item.image || [];
-            const cover =
-              (Array.isArray(images) ? images[images.length - 1]?.url : images) ||
-              'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500';
+            if (bestAudio) {
+              const durSec = parseInt(item.duration || '210', 10);
+              const mins = Math.floor(durSec / 60);
+              const secs = durSec % 60;
+              const durationStr = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
 
-            const artistName =
-              item.artists?.primary?.[0]?.name ||
-              item.primaryArtists ||
-              item.artist ||
-              'Artist';
+              const images = item.image || [];
+              const cover =
+                (Array.isArray(images) ? images[images.length - 1]?.url : images) ||
+                'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500';
 
-            mirrorSongs.push({
-              id: item.id || `mirror-${Math.random()}`,
-              title: cleanHtml(item.name || item.title),
-              artist: cleanHtml(artistName),
-              album: cleanHtml(item.album?.name || item.album || item.name || 'Single'),
-              duration: durationStr,
-              durationSec: durSec,
-              coverUrl: cover,
-              audioUrl: bestAudio,
-              downloadUrl: `/api/download?url=${encodeURIComponent(bestAudio)}&title=${encodeURIComponent(cleanHtml(item.name || item.title))}&artist=${encodeURIComponent(cleanHtml(artistName))}`,
-              quality: '320kbps HD',
-              year: item.year || '2024',
-              language: item.language || 'Music',
-              isPreview: false,
-              source: 'saavn-mirror',
-            });
+              const artistName =
+                item.artists?.primary?.[0]?.name ||
+                item.primaryArtists ||
+                item.artist ||
+                'Artist';
+
+              mirrorSongs.push({
+                id: item.id || `mirror-${Math.random()}`,
+                title: cleanHtml(item.name || item.title),
+                artist: cleanHtml(artistName),
+                album: cleanHtml(item.album?.name || item.album || item.name || 'Single'),
+                duration: durationStr,
+                durationSec: durSec,
+                coverUrl: cover,
+                audioUrl: bestAudio,
+                downloadUrl: `/api/download?url=${encodeURIComponent(bestAudio)}&title=${encodeURIComponent(cleanHtml(item.name || item.title))}&artist=${encodeURIComponent(cleanHtml(artistName))}`,
+                quality: '320kbps HD',
+                year: item.year || '2024',
+                language: item.language || 'Music',
+                isPreview: false,
+                source: 'saavn-mirror',
+              });
+            }
+          }
+          if (mirrorSongs.length > 0) {
+            return mirrorSongs;
           }
         }
-        if (mirrorSongs.length > 0) {
-          return mirrorSongs;
-        }
       }
+    } catch (err) {
+      console.warn(`Client-side mirror search note for ${mirrorUrl}:`, err);
     }
-  } catch (err) {
-    console.warn('Client-side mirror search note:', err);
   }
 
-  // 2.5 Alternative Mirror: JioSaavn Unofficial Mirror
-  try {
-    const altMirrorUrl = `https://jiosaavn-api-tau.vercel.app/search/songs?query=${encodeURIComponent(trimmed)}`;
-    const altRes = await fetch(altMirrorUrl);
-    if (altRes.ok) {
-      const altData = await altRes.json();
-      const list = altData.data?.results || altData.results || [];
-      if (Array.isArray(list) && list.length > 0) {
-        return list.map((item: any) => ({
-          id: item.id || `alt-${Math.random()}`,
-          title: cleanHtml(item.name || item.title),
-          artist: cleanHtml(item.primaryArtists || item.artist || 'Artist'),
-          album: cleanHtml(item.album?.name || item.album || 'Single'),
-          duration: item.duration || '3:30',
-          durationSec: parseInt(item.duration, 10) || 210,
-          coverUrl: item.image?.[item.image?.length - 1]?.url || item.image?.[0]?.url || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500',
-          audioUrl: item.downloadUrl?.[item.downloadUrl?.length - 1]?.url || item.downloadUrl?.[0]?.url || item.url,
-          quality: '320kbps HD',
-          year: item.year || '2024',
-          language: item.language || 'Music',
-          isPreview: false,
-          source: 'saavn-alt',
-        }));
-      }
-    }
-  } catch (err) {
-    console.warn('Alt mirror search failed:', err);
-  }
+  // 2.5 Alternative Mirror: JioSaavn Unofficial Mirror (Legacy cleanup)
+  // (Moving this into the loop above for cleaner logic)
 
   // 3. Tertiary: Direct client-side iTunes API fetch (100% available globally)
   try {
