@@ -4,7 +4,7 @@ import path from 'path';
 import CryptoJS from 'crypto-js';
 import { createServer as createViteServer } from 'vite';
 
-const app = express();
+export const app = express();
 const PORT = 3000;
 
 app.use(cors());
@@ -17,7 +17,7 @@ const CACHE_TTL = 1000 * 60 * 30; // 30 minutes
 /**
  * Decrypt JioSaavn DES encrypted_media_url to get high-quality 320kbps full track audio URL
  */
-function decryptSaavnMediaUrl(encryptedUrl: string, quality: '320' | '160' | '96' = '320'): string {
+export function decryptSaavnMediaUrl(encryptedUrl: string, quality: '320' | '160' | '96' = '320'): string {
   if (!encryptedUrl) return '';
   try {
     const key = CryptoJS.enc.Utf8.parse('38346591');
@@ -369,6 +369,75 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', offlineReady: true, timestamp: Date.now() });
 });
 
+// 1.5 New Releases API
+app.get('/api/new-releases', async (req, res) => {
+  try {
+    // JioSaavn new releases API
+    const saavnUrl = 'https://www.jiosaavn.com/api.php?__call=content.getAlbums&_format=json&_marker=0&api_version=4&ctx=web6dot0&n=20&p=1';
+    const saavnRes = await fetch(saavnUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        Cookie: 'L=english%2Ctelugu%2Chindi%2Ctamil%2Cpunjabi;'
+      }
+    });
+
+    if (saavnRes.ok) {
+      const data = await saavnRes.json();
+      const albums = data.albums || [];
+      const results: any[] = [];
+
+      for (const album of albums) {
+        // For each album, we could fetch its songs, but to be fast we'll just return the album's top song concept
+        // Or just return the albums as "playable" entities if we had album support.
+        // For now, let's just use the search API for "latest 2024 songs" as a more reliable way to get tracks.
+      }
+    }
+
+    // fallback: just search for "latest telugu hindi 2025 songs"
+    const searchUrl = `https://www.jiosaavn.com/api.php?__call=search.getResults&_format=json&_marker=0&api_version=4&ctx=web6dot0&n=30&p=1&q=${encodeURIComponent('latest hits 2025 2024')}`;
+    const searchRes = await fetch(searchUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        Cookie: 'L=english%2Ctelugu%2Chindi%2Ctamil%2Cpunjabi;'
+      }
+    });
+
+    if (searchRes.ok) {
+      const data = await searchRes.json();
+      const raw = data.results || [];
+      const songs: any[] = [];
+      for (const s of raw) {
+        const encrypted = s.more_info?.encrypted_media_url;
+        const decryptedAudio = decryptSaavnMediaUrl(encrypted, '320') || decryptSaavnMediaUrl(encrypted, '160');
+        if (decryptedAudio) {
+          const durSec = parseInt(s.more_info?.duration || '210', 10);
+          const mins = Math.floor(durSec / 60);
+          const secs = durSec % 60;
+          songs.push({
+            id: s.id,
+            title: cleanHtml(s.title),
+            artist: cleanHtml(s.subtitle || s.more_info?.singers || 'Unknown Artist'),
+            album: cleanHtml(s.more_info?.album || s.title),
+            duration: `${mins}:${secs < 10 ? '0' : ''}${secs}`,
+            durationSec: durSec,
+            coverUrl: (s.image || '').replace('150x150', '500x500').replace('http:', 'https:'),
+            audioUrl: decryptedAudio,
+            downloadUrl: `/api/download?url=${encodeURIComponent(decryptedAudio)}&title=${encodeURIComponent(cleanHtml(s.title))}&artist=${encodeURIComponent(cleanHtml(s.subtitle || 'Artist'))}`,
+            quality: '320kbps HD',
+            year: s.year || '2024',
+            language: s.language || 'Music',
+            source: 'new-releases-api'
+          });
+        }
+      }
+      return res.json({ success: true, results: songs });
+    }
+  } catch (err) {
+    console.error('New releases fetch failed:', err);
+  }
+  res.json({ success: true, results: OFFLINE_SONGS_CATALOG.slice(0, 15) });
+});
+
 // 2. Primary Search Route with Multi-API fallbacks & Offline resilience
 app.get('/api/search', async (req, res) => {
   const query = (req.query.q as string || '').trim();
@@ -442,6 +511,7 @@ app.get('/api/search', async (req, res) => {
               quality: '320kbps HD',
               year: s.year || s.more_info?.release_date?.substring(0, 4) || '2024',
               language: s.language || 'Music',
+              source: 'jiosaavn-live',
             });
           }
         }
@@ -508,6 +578,7 @@ app.get('/api/search', async (req, res) => {
               quality: '320kbps HD',
               year: item.year || '2024',
               language: item.language || 'Music',
+              source: 'saavn-mirror',
             });
           }
         }
@@ -554,9 +625,11 @@ app.get('/api/search', async (req, res) => {
               coverUrl: cover || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500',
               audioUrl: item.previewUrl,
               downloadUrl: `/api/download?url=${encodeURIComponent(item.previewUrl)}&title=${encodeURIComponent(item.trackName || 'Song')}&artist=${encodeURIComponent(item.artistName || 'Artist')}`,
-              quality: 'HD Audio',
+              quality: '30s Preview',
               year: (item.releaseDate || '').substring(0, 4) || '2024',
               language: item.primaryGenreName || 'Music',
+              isPreview: true,
+              source: 'itunes',
             };
           });
 

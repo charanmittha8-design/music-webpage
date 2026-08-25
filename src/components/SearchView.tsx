@@ -267,11 +267,16 @@ export const SearchView: React.FC<SearchViewProps> = ({
 
                     <div className="min-w-0 flex-1">
                       <p
-                        className={`text-xs sm:text-sm font-bold truncate leading-tight ${
+                        className={`text-xs sm:text-sm font-bold truncate leading-tight flex items-center gap-1.5 ${
                           isCurrent ? 'text-[#1db954]' : 'text-white'
                         }`}
                       >
                         {song.title}
+                        {song.isPreview && (
+                          <span className="px-1 py-0.2 rounded-[4px] bg-red-500/10 text-red-500 border border-red-500/20 text-[8px] font-black uppercase tracking-tighter">
+                            30s Preview
+                          </span>
+                        )}
                       </p>
                       <p className="text-[10px] sm:text-[11px] text-zinc-400 truncate mt-0.5">
                         {song.artist} • <span className="text-zinc-500">{song.album}</span>

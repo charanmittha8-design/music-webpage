@@ -1,7 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Song, OfflineSong, NavTab, QuickMix, RepeatMode, Playlist } from './types';
 import { CURATED_TRACKS } from './data/musicData';
-import { searchSongs } from './services/musicApi';
+import {
+  searchSongs,
+  downloadSong,
+  fetchMoodRecommendations,
+  fetchNewReleases,
+} from './services/musicApi';
 import {
   getAllOfflineSongs,
   deleteOfflineSong,
@@ -45,6 +50,7 @@ export const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [searchResults, setSearchResults] = useState<Song[]>([]);
   const [isSearching, setIsSearching] = useState<boolean>(false);
+  const [newReleases, setNewReleases] = useState<Song[]>([]);
 
   // Offline Storage State (IndexedDB)
   const [offlineSongs, setOfflineSongs] = useState<OfflineSong[]>([]);
@@ -133,9 +139,22 @@ export const App: React.FC = () => {
     }
   };
 
-  // Initial load of offline stored songs
+  // Initial load of offline stored songs and new releases
   useEffect(() => {
     refreshOfflineVault();
+    
+    // Fetch New Releases automatically
+    const fetchFresh = async () => {
+      try {
+        const fresh = await fetchNewReleases();
+        if (fresh && fresh.length > 0) {
+          setNewReleases(fresh);
+        }
+      } catch (err) {
+        console.warn('Initial new releases fetch note:', err);
+      }
+    };
+    fetchFresh();
   }, []);
 
   // Online / Offline Network listener
@@ -553,6 +572,7 @@ export const App: React.FC = () => {
             isPlaying={isPlaying}
             recentTracks={recentTracks}
             offlineSongs={offlineSongs}
+            newReleases={newReleases}
             onPlaySong={handlePlaySong}
             onQuickMixSelect={handleQuickMixSelect}
             onRequestDownload={handleRequestDownload}

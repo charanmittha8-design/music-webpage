@@ -9,6 +9,7 @@ interface HomeViewProps {
   isPlaying: boolean;
   recentTracks: Song[];
   offlineSongs: OfflineSong[];
+  newReleases?: Song[];
   onPlaySong: (song: Song, customQueue?: Song[]) => void;
   onQuickMixSelect: (mix: QuickMix) => void;
   onRequestDownload: (song: Song) => void;
@@ -21,6 +22,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   isPlaying,
   recentTracks,
   offlineSongs,
+  newReleases = [],
   onPlaySong,
   onQuickMixSelect,
   onRequestDownload,
@@ -37,7 +39,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   };
 
   // Group Indian Tracks for Clean Sections
-  const newArrivals = CURATED_TRACKS.filter(
+  const freshArrivals = newReleases.length > 0 ? newReleases : CURATED_TRACKS.filter(
     (s) => s.year === '2024' || s.year === '2025' || s.year === '2026'
   );
 
@@ -83,13 +85,13 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
 
         <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
-          {newArrivals.map((song) => {
+          {freshArrivals.map((song) => {
             const isThisPlaying = currentSong?.id === song.id && isPlaying;
             return (
               <div
-                key={`new-arrival-${song.id}`}
-                id={`new-arrival-${song.id}`}
-                onClick={() => onPlaySong(song, newArrivals)}
+                key={`fresh-arrival-${song.id}`}
+                id={`fresh-arrival-${song.id}`}
+                onClick={() => onPlaySong(song, freshArrivals)}
                 className="group flex-shrink-0 w-36 sm:w-40 p-2.5 rounded-2xl bg-[#15151e] hover:bg-[#1f1f2c] border border-white/[0.06] hover:border-[#1db954]/40 transition-all duration-200 cursor-pointer shadow-md select-none flex flex-col justify-between"
               >
                 <div>

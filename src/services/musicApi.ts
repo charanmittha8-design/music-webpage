@@ -162,6 +162,8 @@ export async function searchSongs(query: string): Promise<Song[]> {
               quality: '320kbps HD',
               year: item.year || '2024',
               language: item.language || 'Music',
+              isPreview: false,
+              source: 'saavn-mirror',
             });
           }
         }
@@ -172,6 +174,35 @@ export async function searchSongs(query: string): Promise<Song[]> {
     }
   } catch (err) {
     console.warn('Client-side mirror search note:', err);
+  }
+
+  // 2.5 Alternative Mirror: JioSaavn Unofficial Mirror
+  try {
+    const altMirrorUrl = `https://jiosaavn-api-tau.vercel.app/search/songs?query=${encodeURIComponent(trimmed)}`;
+    const altRes = await fetch(altMirrorUrl);
+    if (altRes.ok) {
+      const altData = await altRes.json();
+      const list = altData.data?.results || altData.results || [];
+      if (Array.isArray(list) && list.length > 0) {
+        return list.map((item: any) => ({
+          id: item.id || `alt-${Math.random()}`,
+          title: cleanHtml(item.name || item.title),
+          artist: cleanHtml(item.primaryArtists || item.artist || 'Artist'),
+          album: cleanHtml(item.album?.name || item.album || 'Single'),
+          duration: item.duration || '3:30',
+          durationSec: parseInt(item.duration, 10) || 210,
+          coverUrl: item.image?.[item.image?.length - 1]?.url || item.image?.[0]?.url || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500',
+          audioUrl: item.downloadUrl?.[item.downloadUrl?.length - 1]?.url || item.downloadUrl?.[0]?.url || item.url,
+          quality: '320kbps HD',
+          year: item.year || '2024',
+          language: item.language || 'Music',
+          isPreview: false,
+          source: 'saavn-alt',
+        }));
+      }
+    }
+  } catch (err) {
+    console.warn('Alt mirror search failed:', err);
   }
 
   // 3. Tertiary: Direct client-side iTunes API fetch (100% available globally)
@@ -206,9 +237,11 @@ export async function searchSongs(query: string): Promise<Song[]> {
               coverUrl: cover || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500',
               audioUrl: item.previewUrl,
               downloadUrl: `/api/download?url=${encodeURIComponent(item.previewUrl)}&title=${encodeURIComponent(item.trackName || 'Song')}&artist=${encodeURIComponent(item.artistName || 'Artist')}`,
-              quality: 'HD Audio',
+              quality: '30s Preview',
               year: (item.releaseDate || '').substring(0, 4) || '2024',
               language: item.primaryGenreName || 'Music',
+              isPreview: true,
+              source: 'itunes',
             };
           });
 
@@ -309,6 +342,24 @@ export async function fetchMoodRecommendations(song: Song): Promise<Song[]> {
     }
   } catch (err) {
     console.warn('Mood recommendation fetch warning:', err);
+  }
+  return [];
+}
+
+/**
+ * Fetch latest Indian song releases automatically from backend
+ */
+export async function fetchNewReleases(): Promise<Song[]> {
+  try {
+    const res = await fetch('/api/new-releases');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.success && Array.isArray(data.results)) {
+        return data.results;
+      }
+    }
+  } catch (err) {
+    console.warn('New releases fetch error:', err);
   }
   return [];
 }

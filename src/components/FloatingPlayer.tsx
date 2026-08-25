@@ -384,6 +384,11 @@ export const FloatingPlayer: React.FC<FloatingPlayerProps> = ({
                 <span className="w-1.5 h-1.5 rounded-full bg-[#1db954] animate-pulse" />
                 320kbps Studio Master
               </span>
+              {currentSong.isPreview && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-red-500/20 border border-red-500/30 text-red-400 text-[10px] font-black uppercase">
+                  ⚠️ 30s Preview Only
+                </span>
+              )}
               {(() => {
                 const mood = detectSongMood(currentSong);
                 const moodLabels: Record<string, { label: string; icon: string; style: string }> = {
