@@ -135,43 +135,67 @@ export async function searchSongs(query: string): Promise<Song[]> {
     console.warn('Backend /api/search unreachable, trying direct client-side fallback:', err);
   }
 
-  // 2. Secondary: Direct client-side iTunes search fallback (if server is not reachable)
+  // 2. Secondary: Direct client-side JioSaavn API fetch (Full length 320kbps)
   try {
-    const itunesUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(
+    const saavnUrl = `https://www.jiosaavn.com/api.php?__call=search.getResults&_format=json&_marker=0&api_version=4&ctx=web6dot0&n=25&p=1&q=${encodeURIComponent(
       trimmed
-    )}&media=music&limit=15`;
-    const itunesRes = await fetch(itunesUrl);
-    if (itunesRes.ok) {
-      const itunesData = await itunesRes.json();
-      if (itunesData.results && itunesData.results.length > 0) {
-        return itunesData.results.map((item: any) => {
-          const durSec = Math.round((item.trackTimeMillis || 210000) / 1000);
-          const mins = Math.floor(durSec / 60);
-          const secs = durSec % 60;
-          const cover = (item.artworkUrl100 || '').replace('100x100bb', '600x600bb');
+    )}`;
 
-          return {
-            id: `itunes-${item.trackId}`,
-            title: item.trackName || trimmed,
-            artist: item.artistName || 'Unknown Artist',
-            album: item.collectionName || 'Single',
-            duration: `${mins}:${secs < 10 ? '0' : ''}${secs}`,
-            durationSec: durSec,
-            coverUrl: cover || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500',
-            audioUrl: item.previewUrl,
-            downloadUrl: item.previewUrl,
-            quality: 'HD Master',
-            year: item.releaseDate ? item.releaseDate.substring(0, 4) : '2024',
-            language: item.primaryGenreName || 'Pop',
-          };
-        });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+
+    const saavnRes = await fetch(saavnUrl, { signal: controller.signal });
+    clearTimeout(timeout);
+
+    if (saavnRes.ok) {
+      const data = await saavnRes.json();
+      const results = data.results || [];
+      if (results.length > 0) {
+        const fullSongs: Song[] = [];
+        for (const s of results) {
+          const encrypted = s.more_info?.encrypted_media_url;
+          const decryptedAudio = decryptSaavnMediaUrl(encrypted, '320');
+          if (decryptedAudio) {
+            const durSec = parseInt(s.more_info?.duration || '210', 10);
+            const mins = Math.floor(durSec / 60);
+            const secs = durSec % 60;
+            const durationStr = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+            const cover = (s.image || '')
+              .replace('150x150', '500x500')
+              .replace('50x50', '500x500')
+              .replace('http:', 'https:');
+            const primaryArtist =
+              s.more_info?.artistMap?.primary_artists?.[0]?.name ||
+              s.subtitle ||
+              s.more_info?.singers ||
+              'Unknown Artist';
+
+            fullSongs.push({
+              id: s.id || `s-${Math.random()}`,
+              title: cleanHtml(s.title),
+              artist: cleanHtml(primaryArtist),
+              album: cleanHtml(s.more_info?.album || s.title),
+              duration: durationStr,
+              durationSec: durSec,
+              coverUrl: cover || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500',
+              audioUrl: decryptedAudio,
+              downloadUrl: `/api/download?url=${encodeURIComponent(decryptedAudio)}&title=${encodeURIComponent(cleanHtml(s.title))}&artist=${encodeURIComponent(cleanHtml(primaryArtist))}`,
+              quality: '320kbps HD',
+              year: s.year || s.more_info?.release_date?.substring(0, 4) || '2024',
+              language: s.language || 'Music',
+            });
+          }
+        }
+        if (fullSongs.length > 0) {
+          return fullSongs;
+        }
       }
     }
   } catch (err) {
-    console.warn('iTunes direct search failed:', err);
+    console.warn('Client-side JioSaavn direct search note:', err);
   }
 
-  // 3. Tertiary: Local fuzzy search over complete catalog
+  // 3. Tertiary: Local fuzzy search over complete verified full-length catalog
   return localFuzzySearch(trimmed);
 }
 
@@ -250,6 +274,100 @@ export function formatTime(seconds: number): string {
 }
 
 export function getMockLyrics(song: Song): { time: number; text: string }[] {
+  const titleLower = song.title.toLowerCase();
+
+  if (titleLower.includes('believer')) {
+    return [
+      { time: 0, text: 'First things first, I\'ma say all the words inside my head' },
+      { time: 6, text: 'I\'m fired up and tired of the way that things have been, oh-ooh' },
+      { time: 13, text: 'The way that things have been, oh-ooh' },
+      { time: 18, text: 'Second thing second, don\'t you tell me what you think that I can be' },
+      { time: 24, text: 'I\'m the one at the sail, I\'m the master of my sea, oh-ooh' },
+      { time: 30, text: 'The master of my sea, oh-ooh' },
+      { time: 35, text: 'I was broken from a young age' },
+      { time: 38, text: 'Taking my sulking to the masses' },
+      { time: 41, text: 'Writing my poems for the few' },
+      { time: 44, text: 'That look at me, took to me, shook to me, feeling me' },
+      { time: 47, text: 'Singing from heartache from the pain' },
+      { time: 51, text: 'Taking my message from the veins' },
+      { time: 54, text: 'Speaking my lesson from the brain' },
+      { time: 57, text: 'Seeing the beauty through the...' },
+      { time: 60, text: 'PAIN! You made me a, you made me a believer, believer!' },
+      { time: 68, text: 'PAIN! You break me down, you build me up, believer, believer!' },
+      { time: 76, text: 'Pain! Oh, let the bullets fly, oh, let them rain' },
+      { time: 82, text: 'My life, my love, my drive, it came from...' },
+      { time: 86, text: 'PAIN! You made me a, you made me a believer, believer!' },
+      { time: 96, text: 'Third things third, send a prayer to the ones up above' },
+      { time: 102, text: 'All the hate that you\'ve heard has turned your spirit to a dove, oh-ooh' },
+      { time: 109, text: 'Your spirit up above, oh-ooh' },
+      { time: 114, text: 'I was choking in the crowd, building my rain up in the cloud' },
+      { time: 120, text: 'Falling like ashes to the ground, hoping my feelings they would drown' },
+      { time: 126, text: 'PAIN! You made me a, you made me a believer, believer!' },
+    ];
+  }
+
+  if (titleLower.includes('magenta') || titleLower.includes('riddim')) {
+    return [
+      { time: 0, text: '🎵 [DJ Snake - Magenta Riddim] 🎵' },
+      { time: 4, text: '🔥 Heavy Bass Drop Incoming 🔥' },
+      { time: 12, text: '🎺 High-Energy Brass & Horns Rhythms 🎺' },
+      { time: 25, text: '🥁 Feel the infectious South Indian & Global EDM Fusion Beat!' },
+      { time: 40, text: '⚡ Dance, Jump, & Vibe to the Riddim ⚡' },
+      { time: 60, text: '🔊 Bass Boost 320kbps Drop 🔊' },
+      { time: 85, text: '💃 Maximum Energy Rave Sound 💃' },
+      { time: 110, text: '✨ DJ Snake International Dance Party ✨' },
+      { time: 140, text: '🎵 Relentless Groove & Festival Beat 🎵' },
+      { time: 170, text: '💥 Outro - Magenta Riddim 💥' },
+    ];
+  }
+
+  if (titleLower.includes('faded')) {
+    return [
+      { time: 0, text: 'You were the shadow to my light' },
+      { time: 6, text: 'Did you feel us? Another start' },
+      { time: 13, text: 'You fade away, afraid our aim is out of sight' },
+      { time: 20, text: 'Wanna see us, alive' },
+      { time: 27, text: 'Where are you now?' },
+      { time: 34, text: 'Where are you now?' },
+      { time: 41, text: 'Where are you now? Was it all in my fantasy?' },
+      { time: 48, text: 'Where are you now? Were you only imaginary?' },
+      { time: 55, text: 'Where are you now? Atlantis, under the sea, under the sea' },
+      { time: 68, text: 'Where are you now? Another dream' },
+      { time: 76, text: 'The monster\'s running wild inside of me' },
+      { time: 82, text: 'I\'m faded, I\'m faded' },
+      { time: 90, text: 'So lost, I\'m faded, I\'m faded' },
+      { time: 98, text: 'So lost, I\'m faded' },
+    ];
+  }
+
+  if (titleLower.includes('bones')) {
+    return [
+      { time: 0, text: 'Gimme, gimme, gimme some room to breathe' },
+      { time: 4, text: 'Can\'t recognize the face looking back at me' },
+      { time: 8, text: 'I got this feeling inside my bones' },
+      { time: 12, text: 'It goes electric, wavy when I turn it on' },
+      { time: 18, text: 'All through my city, all through my home' },
+      { time: 22, text: 'We\'re flying up, no ceiling, when we\'re in our zone' },
+      { time: 28, text: 'I got that sunshine in my pocket, got that good soul in my feet' },
+      { time: 35, text: 'I feel that hot blood in my body when it drops, ooh' },
+      { time: 42, text: 'I can\'t take my eyes up off it, moving so phenomenally' },
+      { time: 49, text: 'Room on lock, the way we rock it, so don\'t stop' },
+    ];
+  }
+
+  if (titleLower.includes('pushpa pushpa')) {
+    return [
+      { time: 0, text: 'Pushpa Pushpa Pushpa... Pushpa Raj!' },
+      { time: 12, text: 'Charanam kalipithe thadabada ledu' },
+      { time: 24, text: 'Thokkina thalapai vanukulu levu' },
+      { time: 36, text: 'Gaddame leni pillaliki gatham telidu' },
+      { time: 48, text: 'Ee Rajuki edure lene ledu!' },
+      { time: 60, text: 'Taggede Le! Pushpa Raj!' },
+      { time: 75, text: 'Fire ledu Wild Fire!' },
+      { time: 90, text: 'Pushpa... Pushpa... Pushpa Pushpa Pushparaj!' },
+    ];
+  }
+
   const dur = song.durationSec || 220;
   const step = Math.floor(dur / 8);
 

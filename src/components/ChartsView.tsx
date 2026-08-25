@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { TrendingUp, Play, Trophy, Download, CheckCircle2, Loader2 } from 'lucide-react';
+import { TrendingUp, Play, Trophy, Download, CheckCircle2, Loader2, Globe2 } from 'lucide-react';
 import { Song } from '../types';
 import { CURATED_TRACKS } from '../data/musicData';
 import { downloadSong } from '../services/musicApi';
+import { SafeImage } from './SafeImage';
 
 interface ChartsViewProps {
   currentSong: Song | null;
   isPlaying: boolean;
   onPlaySong: (song: Song, queue: Song[]) => void;
+  onRequestDownload?: (song: Song) => void;
   onShowToast?: (msg: string) => void;
 }
 
@@ -15,28 +17,33 @@ export const ChartsView: React.FC<ChartsViewProps> = ({
   currentSong,
   isPlaying,
   onPlaySong,
+  onRequestDownload,
   onShowToast,
 }) => {
-  const [activeCategory, setActiveCategory] = useState<'all' | 'telugu' | 'hindi' | 'global'>('all');
+  const [activeCategory, setActiveCategory] = useState<'all' | 'english' | 'telugu' | 'hindi'>('all');
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [downloadedIds, setDownloadedIds] = useState<Set<string>>(new Set());
 
   const categories = [
-    { id: 'all', label: '🔥 Top 10 Global' },
+    { id: 'all', label: '🔥 All Top Charts' },
+    { id: 'english', label: '🌍 Global English & Billboard' },
     { id: 'telugu', label: '⚡ Telugu Superhits' },
-    { id: 'hindi', label: '🌟 Bollywood Hits' },
-    { id: 'global', label: '🌍 Pop & Viral' },
+    { id: 'hindi', label: '🌟 Bollywood Romance' },
   ];
 
   const filteredTracks = CURATED_TRACKS.filter((track) => {
-    if (activeCategory === 'telugu') return track.language === 'Telugu';
+    if (activeCategory === 'english') return track.language === 'English';
+    if (activeCategory === 'telugu') return track.language === 'Telugu' || track.artist.includes('Devi') || track.artist.includes('Anirudh');
     if (activeCategory === 'hindi') return track.language === 'Hindi';
-    if (activeCategory === 'global') return track.language === 'English' || track.language === 'Malayalam' || track.language === 'Tamil';
     return true;
   });
 
   const handleDownload = async (e: React.MouseEvent, song: Song) => {
     e.stopPropagation();
+    if (onRequestDownload) {
+      onRequestDownload(song);
+      return;
+    }
     if (downloadingId === song.id) return;
 
     setDownloadingId(song.id);
@@ -54,24 +61,25 @@ export const ChartsView: React.FC<ChartsViewProps> = ({
   };
 
   return (
-    <div className="space-y-6 animate-fadeIn">
+    <div className="space-y-5 animate-fadeIn pb-12">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pt-1">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
-            Trending Charts <TrendingUp className="w-6 h-6 text-[#1db954]" />
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2">
+            <span>Trending Charts</span>
+            <TrendingUp className="w-5 h-5 text-[#1db954]" />
           </h1>
-          <p className="text-xs text-zinc-400 mt-1">
-            Real-time full track charts with high-speed MP3 download
+          <p className="text-xs text-zinc-400 mt-0.5">
+            Real-time charts: Telugu, Global English & Bollywood
           </p>
         </div>
         <button
           id="play-chart-all-btn"
           onClick={() => onPlaySong(filteredTracks[0], filteredTracks)}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#1db954] text-black font-bold text-xs hover:bg-[#22c55e] transition-all shadow-lg hover:scale-105"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#1db954] text-black font-extrabold text-xs hover:bg-[#22c55e] transition-all shadow-md"
         >
           <Play className="w-3.5 h-3.5 fill-current" />
-          <span>Play Chart</span>
+          <span>Play All</span>
         </button>
       </div>
 
@@ -82,10 +90,10 @@ export const ChartsView: React.FC<ChartsViewProps> = ({
             key={cat.id}
             id={`chart-tab-${cat.id}`}
             onClick={() => setActiveCategory(cat.id as any)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
               activeCategory === cat.id
                 ? 'bg-[#1db954] text-black shadow-md'
-                : 'bg-[#121216] text-zinc-300 hover:bg-[#1c1c24] border border-white/5'
+                : 'bg-[#14141c] text-zinc-300 hover:bg-[#1f1f2c] border border-white/5'
             }`}
           >
             {cat.label}
@@ -94,7 +102,7 @@ export const ChartsView: React.FC<ChartsViewProps> = ({
       </div>
 
       {/* Ranked Track List */}
-      <div className="space-y-2">
+      <div className="space-y-1">
         {filteredTracks.map((song, idx) => {
           const isCurrent = currentSong?.id === song.id;
           const rank = idx + 1;
@@ -106,56 +114,57 @@ export const ChartsView: React.FC<ChartsViewProps> = ({
               key={`chart-track-${song.id}`}
               id={`chart-item-${song.id}`}
               onClick={() => onPlaySong(song, filteredTracks)}
-              className={`group flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all ${
+              className={`group flex items-center justify-between p-2 sm:p-2.5 rounded-xl cursor-pointer transition-all ${
                 isCurrent
                   ? 'bg-[#1db954]/15 border border-[#1db954]/30'
-                  : 'bg-[#121216]/80 hover:bg-[#1c1c24] border border-white/[0.05]'
+                  : 'bg-[#14141c]/80 hover:bg-[#1f1f2c] border border-white/[0.04]'
               }`}
             >
-              <div className="flex items-center gap-3.5 min-w-0 flex-1">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
                 {/* Ranking Icon / Badge */}
-                <div className="w-6 text-center font-extrabold text-sm flex items-center justify-center">
+                <div className="w-5 text-center font-extrabold text-xs sm:text-sm flex items-center justify-center flex-shrink-0">
                   {rank === 1 ? (
                     <span className="text-yellow-400 flex items-center justify-center">
                       <Trophy className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                     </span>
                   ) : rank === 2 ? (
-                    <span className="text-zinc-300">#2</span>
+                    <span className="text-zinc-300 font-bold">#2</span>
                   ) : rank === 3 ? (
-                    <span className="text-amber-600">#3</span>
+                    <span className="text-amber-500 font-bold">#3</span>
                   ) : (
                     <span className="text-zinc-500 font-mono text-xs">#{rank}</span>
                   )}
                 </div>
 
-                <div className="relative w-11 h-11 flex-shrink-0 rounded-lg overflow-hidden">
-                  <img
+                <div className="relative w-9 h-9 sm:w-10 sm:h-10 flex-shrink-0 rounded-lg overflow-hidden bg-[#121216]">
+                  <SafeImage
                     src={song.coverUrl}
                     alt={song.title}
                     className="w-full h-full object-cover"
-                    referrerPolicy="no-referrer"
                   />
                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Play className="w-4 h-4 text-white fill-current translate-x-0.5" />
+                    <Play className="w-3.5 h-3.5 text-white fill-current translate-x-0.5" />
                   </div>
                 </div>
 
                 <div className="min-w-0 flex-1">
                   <p
-                    className={`text-xs sm:text-sm font-bold truncate ${
+                    className={`text-xs sm:text-sm font-bold truncate leading-tight ${
                       isCurrent ? 'text-[#1db954]' : 'text-white'
                     }`}
                   >
                     {song.title}
                   </p>
-                  <p className="text-[11px] text-zinc-400 truncate mt-0.5">
-                    {song.artist}
+                  <p className="text-[10px] sm:text-[11px] text-zinc-400 truncate mt-0.5">
+                    {song.artist} • <span className="text-zinc-500">{song.language || 'English'}</span>
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 sm:gap-3 ml-2 flex-shrink-0">
-                <span className="text-xs text-zinc-400 font-mono hidden sm:inline">{song.duration}</span>
+              <div className="flex items-center gap-1.5 ml-2 flex-shrink-0">
+                <span className="text-[10px] text-zinc-500 font-mono hidden sm:inline mr-1">
+                  {song.duration}
+                </span>
 
                 {/* Download Button */}
                 <button
@@ -172,17 +181,13 @@ export const ChartsView: React.FC<ChartsViewProps> = ({
                   title="Download 320kbps MP3"
                 >
                   {isThisDownloading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   ) : isDownloaded ? (
-                    <CheckCircle2 className="w-4 h-4" />
+                    <CheckCircle2 className="w-3.5 h-3.5" />
                   ) : (
-                    <Download className="w-4 h-4" />
+                    <Download className="w-3.5 h-3.5" />
                   )}
                 </button>
-
-                <div className="w-8 h-8 rounded-full bg-white/5 group-hover:bg-[#1db954] group-hover:text-black flex items-center justify-center text-zinc-300 transition-colors">
-                  <Play className="w-3.5 h-3.5 fill-current translate-x-0.5" />
-                </div>
               </div>
             </div>
           );

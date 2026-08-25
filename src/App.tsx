@@ -1,7 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Song, NavTab, QuickMix, RepeatMode, Playlist } from './types';
+import { Song, OfflineSong, NavTab, QuickMix, RepeatMode, Playlist } from './types';
 import { CURATED_TRACKS } from './data/musicData';
 import { searchSongs } from './services/musicApi';
+import {
+  getAllOfflineSongs,
+  deleteOfflineSong,
+  clearAllOfflineSongs,
+  getOfflineStorageStats,
+  getOfflineAudioUrl,
+} from './services/offlineStorage';
 import { BottomNav } from './components/BottomNav';
 import { FloatingPlayer } from './components/FloatingPlayer';
 import { HomeView } from './components/HomeView';
@@ -10,10 +17,17 @@ import { ChartsView } from './components/ChartsView';
 import { LibraryView } from './components/LibraryView';
 import { LyricsModal } from './components/LyricsModal';
 import { QueueModal } from './components/QueueModal';
+import { DownloadModal } from './components/DownloadModal';
+import { WifiOff } from 'lucide-react';
 
 export const App: React.FC = () => {
   // Navigation
   const [activeTab, setActiveTab] = useState<NavTab>('home');
+
+  // Network State
+  const [isOnline, setIsOnline] = useState<boolean>(() =>
+    typeof navigator !== 'undefined' ? navigator.onLine : true
+  );
 
   // Audio Playback State
   const [currentSong, setCurrentSong] = useState<Song | null>(() => CURATED_TRACKS[0]);
@@ -32,13 +46,17 @@ export const App: React.FC = () => {
   const [searchResults, setSearchResults] = useState<Song[]>([]);
   const [isSearching, setIsSearching] = useState<boolean>(false);
 
-  // Storage State
+  // Offline Storage State (IndexedDB)
+  const [offlineSongs, setOfflineSongs] = useState<OfflineSong[]>([]);
+  const [offlineStorageBytes, setOfflineStorageBytes] = useState<number>(0);
+
+  // Local Storage Data (Device-isolated)
   const [searchHistory, setSearchHistory] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem('charan_search_history');
-      return saved ? JSON.parse(saved) : ['Pushpa 2', 'RRR', 'Devara', 'Arijit Singh'];
+      return saved ? JSON.parse(saved) : [];
     } catch {
-      return ['Pushpa 2', 'RRR', 'Devara'];
+      return [];
     }
   });
 
@@ -89,6 +107,7 @@ export const App: React.FC = () => {
   // Modals & Overlays
   const [isLyricsOpen, setIsLyricsOpen] = useState<boolean>(false);
   const [isQueueOpen, setIsQueueOpen] = useState<boolean>(false);
+  const [downloadModalSong, setDownloadModalSong] = useState<Song | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Audio Ref
@@ -99,8 +118,45 @@ export const App: React.FC = () => {
     setToastMessage(msg);
     setTimeout(() => {
       setToastMessage(null);
-    }, 2500);
+    }, 2800);
   };
+
+  // Refresh Offline Songs from IndexedDB
+  const refreshOfflineVault = async () => {
+    try {
+      const storedSongs = await getAllOfflineSongs();
+      setOfflineSongs(storedSongs);
+      const stats = await getOfflineStorageStats();
+      setOfflineStorageBytes(stats.totalBytes);
+    } catch (e) {
+      console.warn('Error refreshing offline vault:', e);
+    }
+  };
+
+  // Initial load of offline stored songs
+  useEffect(() => {
+    refreshOfflineVault();
+  }, []);
+
+  // Online / Offline Network listener
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      showToast('📶 Back online • Connected to network');
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+      showToast('📡 You are offline • Playing from Local Offline Vault');
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   // Sync with LocalStorage
   useEffect(() => {
@@ -139,8 +195,18 @@ export const App: React.FC = () => {
       handleTrackEnd();
     };
 
-    const onError = (e: Event) => {
+    const onError = async (e: Event) => {
       console.warn('Audio playback encountered an issue:', e);
+      // If network fails, try fallback to offline object URL if present
+      if (currentSong) {
+        const offlineUrl = await getOfflineAudioUrl(currentSong.id);
+        if (offlineUrl && audio.src !== offlineUrl) {
+          audio.src = offlineUrl;
+          if (isPlaying) {
+            audio.play().catch(() => {});
+          }
+        }
+      }
     };
 
     audio.addEventListener('timeupdate', onTimeUpdate);
@@ -167,17 +233,33 @@ export const App: React.FC = () => {
       setDuration(currentSong.durationSec);
     }
 
-    if (audio.src !== currentSong.audioUrl) {
-      audio.src = currentSong.audioUrl;
-      audio.currentTime = 0;
-      setCurrentTime(0);
-      if (isPlaying) {
-        audio.play().catch((err) => {
-          console.warn('Auto-play blocked or audio load failed:', err);
-        });
+    const prepareAndPlay = async () => {
+      // Check if this song is saved offline in IndexedDB
+      let resolvedSrc = currentSong.audioUrl;
+      const offlineMatch = offlineSongs.find((s) => s.id === currentSong.id);
+      if (offlineMatch?.offlineBlobUrl) {
+        resolvedSrc = offlineMatch.offlineBlobUrl;
+      } else {
+        const offlineBlob = await getOfflineAudioUrl(currentSong.id);
+        if (offlineBlob) {
+          resolvedSrc = offlineBlob;
+        }
       }
-    }
-  }, [currentSong]);
+
+      if (audio.src !== resolvedSrc) {
+        audio.src = resolvedSrc;
+        audio.currentTime = 0;
+        setCurrentTime(0);
+        if (isPlaying) {
+          audio.play().catch((err) => {
+            console.warn('Playback resume notice:', err);
+          });
+        }
+      }
+    };
+
+    prepareAndPlay();
+  }, [currentSong, offlineSongs]);
 
   // Play / Pause toggle
   useEffect(() => {
@@ -203,18 +285,24 @@ export const App: React.FC = () => {
   };
 
   // Play a specific song
-  const handlePlaySong = (song: Song, customQueue?: Song[]) => {
-    setCurrentSong(song);
+  const handlePlaySong = async (song: Song, customQueue?: Song[]) => {
+    // Check if song has local offline URL
+    const offlineMatch = offlineSongs.find((s) => s.id === song.id);
+    const playableSong = offlineMatch
+      ? { ...song, audioUrl: offlineMatch.offlineBlobUrl || song.audioUrl, isOffline: true }
+      : song;
+
+    setCurrentSong(playableSong);
     setIsPlaying(true);
 
     if (customQueue && customQueue.length > 0) {
       setQueue(customQueue);
     } else if (!queue.some((s) => s.id === song.id)) {
-      setQueue((prev) => [song, ...prev]);
+      setQueue((prev) => [playableSong, ...prev]);
     }
 
     // Add to recent tracks (deduped, max 10)
-    setRecentTracks((prev) => [song, ...prev.filter((s) => s.id !== song.id)].slice(0, 10));
+    setRecentTracks((prev) => [playableSong, ...prev.filter((s) => s.id !== song.id)].slice(0, 10));
   };
 
   // Next Track Logic
@@ -240,7 +328,6 @@ export const App: React.FC = () => {
   const handlePrev = () => {
     if (queue.length === 0) return;
 
-    // If more than 3 seconds into track, restart current track
     if (currentTime > 3 && audioRef.current) {
       audioRef.current.currentTime = 0;
       setCurrentTime(0);
@@ -327,7 +414,6 @@ export const App: React.FC = () => {
       const results = await searchSongs(query);
       setSearchResults(results);
 
-      // Add to search history
       setSearchHistory((prev) => [
         query,
         ...prev.filter((item) => item.toLowerCase() !== query.toLowerCase()),
@@ -372,12 +458,81 @@ export const App: React.FC = () => {
     }
   };
 
+  // Delete Offline Song
+  const handleDeleteOfflineSong = async (songId: string) => {
+    const ok = await deleteOfflineSong(songId);
+    if (ok) {
+      await refreshOfflineVault();
+      showToast('Track removed from Offline Vault');
+    }
+  };
+
+  // Clear All Offline Songs
+  const handleClearAllOffline = async () => {
+    if (window.confirm('Remove all stored songs from your offline vault?')) {
+      await clearAllOfflineSongs();
+      await refreshOfflineVault();
+      showToast('Offline Vault cleared');
+    }
+  };
+
+  // Request Download (Opens Modal)
+  const handleRequestDownload = (song: Song) => {
+    setDownloadModalSong(song);
+  };
+
   const isCurrentFavorite = currentSong
     ? favorites.some((f) => f.id === currentSong.id)
     : false;
 
   return (
     <div className="min-h-screen bg-[#070708] text-white flex flex-col justify-between selection:bg-[#1db954] selection:text-black">
+      {/* 👑 Top App Brand Bar (Persistent on all screens for high visibility) */}
+      <header className="sticky top-0 z-30 bg-[#070708]/90 backdrop-blur-xl border-b border-white/[0.08] px-4 py-2.5">
+        <div className="max-w-2xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#1db954] to-emerald-400 p-[2px] shadow-lg shadow-emerald-950/40">
+              <div className="w-full h-full rounded-[10px] bg-[#0c0c10] flex items-center justify-center font-extrabold text-xs text-[#1db954]">
+                CM
+              </div>
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="font-extrabold text-sm tracking-tight text-white">CHARAN MUSIC</span>
+                <span className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-gradient-to-r from-amber-400 to-amber-600 text-black shadow-sm">
+                  PREMIUM
+                </span>
+              </div>
+              <p className="text-[10px] text-zinc-400 leading-none">
+                Full 320kbps • Zero-Data Offline Vault
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {!isOnline ? (
+              <span className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold animate-pulse">
+                <WifiOff className="w-3 h-3" />
+                <span>Offline</span>
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full bg-[#1db954]/15 text-[#1db954] border border-[#1db954]/30 font-bold">
+                <span className="w-2 h-2 rounded-full bg-[#1db954] animate-ping" />
+                <span>Ultra HD 320K</span>
+              </span>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* Offline Status Top Bar (when user is offline) */}
+      {!isOnline && (
+        <div className="bg-amber-500/20 border-b border-amber-500/30 text-amber-300 px-4 py-1.5 text-xs text-center font-semibold flex items-center justify-center gap-2">
+          <WifiOff className="w-3.5 h-3.5" />
+          <span>Offline Mode Active • Playing from your Local Offline Vault with 0 Data</span>
+        </div>
+      )}
+
       {/* Toast Notification Banner */}
       {toastMessage && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-[#1db954] text-black font-bold px-4 py-2 rounded-full shadow-2xl text-xs flex items-center gap-2 animate-bounce">
@@ -397,8 +552,11 @@ export const App: React.FC = () => {
             currentSong={currentSong}
             isPlaying={isPlaying}
             recentTracks={recentTracks}
+            offlineSongs={offlineSongs}
             onPlaySong={handlePlaySong}
             onQuickMixSelect={handleQuickMixSelect}
+            onRequestDownload={handleRequestDownload}
+            onNavigateTab={setActiveTab}
             onShowToast={showToast}
           />
         )}
@@ -420,6 +578,7 @@ export const App: React.FC = () => {
             onClearAllHistory={() => setSearchHistory([])}
             onToggleFavorite={handleToggleFavorite}
             onAddToQueue={handleAddToQueue}
+            onRequestDownload={handleRequestDownload}
             onShowToast={showToast}
           />
         )}
@@ -429,6 +588,7 @@ export const App: React.FC = () => {
             currentSong={currentSong}
             isPlaying={isPlaying}
             onPlaySong={handlePlaySong}
+            onRequestDownload={handleRequestDownload}
             onShowToast={showToast}
           />
         )}
@@ -437,6 +597,8 @@ export const App: React.FC = () => {
           <LibraryView
             favorites={favorites}
             playlists={playlists}
+            offlineSongs={offlineSongs}
+            offlineStorageBytes={offlineStorageBytes}
             currentSong={currentSong}
             isPlaying={isPlaying}
             onPlaySong={handlePlaySong}
@@ -444,6 +606,9 @@ export const App: React.FC = () => {
             onCreatePlaylist={handleCreatePlaylist}
             onDeletePlaylist={handleDeletePlaylist}
             onPlayPlaylist={handlePlayPlaylist}
+            onDeleteOfflineSong={handleDeleteOfflineSong}
+            onClearAllOffline={handleClearAllOffline}
+            onRequestDownload={handleRequestDownload}
             onShowToast={showToast}
           />
         )}
@@ -470,6 +635,7 @@ export const App: React.FC = () => {
           onToggleFavorite={handleToggleFavorite}
           onOpenLyrics={() => setIsLyricsOpen(true)}
           onOpenQueue={() => setIsQueueOpen(true)}
+          onRequestDownload={handleRequestDownload}
           onShowToast={showToast}
         />
       )}
@@ -496,6 +662,18 @@ export const App: React.FC = () => {
         onSelectSong={handlePlaySong}
         onRemoveFromQueue={handleRemoveFromQueue}
         onClearQueue={handleClearQueue}
+        onRequestDownload={handleRequestDownload}
+        onShowToast={showToast}
+      />
+
+      {/* Download Options Modal (Web App Offline & Mobile Storage) */}
+      <DownloadModal
+        song={downloadModalSong}
+        isOpen={!!downloadModalSong}
+        onClose={() => setDownloadModalSong(null)}
+        onDownloadedOffline={async () => {
+          await refreshOfflineVault();
+        }}
         onShowToast={showToast}
       />
     </div>

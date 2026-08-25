@@ -12,6 +12,15 @@ export interface Song {
   year?: string;
   language?: string;
   isFavorite?: boolean;
+  isOffline?: boolean;
+  offlineBlobUrl?: string;
+  sizeBytes?: number;
+}
+
+export interface OfflineSong extends Song {
+  downloadedAt: number;
+  sizeBytes: number;
+  audioBlob?: Blob;
 }
 
 export type AudioQuality = '320kbps' | '160kbps' | '96kbps';

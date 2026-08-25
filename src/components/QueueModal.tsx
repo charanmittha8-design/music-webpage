@@ -11,6 +11,7 @@ interface QueueModalProps {
   onSelectSong: (song: Song) => void;
   onRemoveFromQueue: (songId: string) => void;
   onClearQueue: () => void;
+  onRequestDownload?: (song: Song) => void;
   onShowToast?: (msg: string) => void;
 }
 
@@ -22,6 +23,7 @@ export const QueueModal: React.FC<QueueModalProps> = ({
   onSelectSong,
   onRemoveFromQueue,
   onClearQueue,
+  onRequestDownload,
   onShowToast,
 }) => {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
@@ -31,6 +33,10 @@ export const QueueModal: React.FC<QueueModalProps> = ({
 
   const handleDownload = async (e: React.MouseEvent, song: Song) => {
     e.stopPropagation();
+    if (onRequestDownload) {
+      onRequestDownload(song);
+      return;
+    }
     if (downloadingId === song.id) return;
 
     setDownloadingId(song.id);

@@ -9,10 +9,12 @@ import {
   Compass,
   Download,
   CheckCircle2,
+  Radio,
 } from 'lucide-react';
 import { Song } from '../types';
 import { GENRES } from '../data/musicData';
 import { downloadSong } from '../services/musicApi';
+import { SafeImage } from './SafeImage';
 
 interface SearchViewProps {
   searchQuery: string;
@@ -28,6 +30,7 @@ interface SearchViewProps {
   onClearAllHistory: () => void;
   onToggleFavorite: (song: Song) => void;
   onAddToQueue: (song: Song) => void;
+  onRequestDownload?: (song: Song) => void;
   onShowToast?: (msg: string) => void;
 }
 
@@ -37,6 +40,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
   searchHistory,
   isLoading,
   currentSong,
+  isPlaying,
   favorites,
   onSearch,
   onSelectSong,
@@ -44,6 +48,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
   onClearAllHistory,
   onToggleFavorite,
   onAddToQueue,
+  onRequestDownload,
   onShowToast,
 }) => {
   const [localInput, setLocalInput] = useState(searchQuery);
@@ -69,6 +74,10 @@ export const SearchView: React.FC<SearchViewProps> = ({
 
   const handleDownload = async (e: React.MouseEvent, song: Song) => {
     e.stopPropagation();
+    if (onRequestDownload) {
+      onRequestDownload(song);
+      return;
+    }
     if (downloadingId === song.id) return;
 
     setDownloadingId(song.id);
@@ -86,28 +95,31 @@ export const SearchView: React.FC<SearchViewProps> = ({
   };
 
   return (
-    <div className="space-y-6 animate-fadeIn">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
-          Explore & Search <Compass className="w-6 h-6 text-[#1db954]" />
-        </h1>
-        <p className="text-xs text-zinc-400 mt-1">
-          Search and stream full-length 320kbps songs with instant MP3 downloads
-        </p>
+    <div className="space-y-4 animate-fadeIn pb-12">
+      {/* 1. Compact Search Header */}
+      <div className="flex items-center justify-between pt-1">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-1.5">
+            <span>Search</span>
+            <Compass className="w-5 h-5 text-[#1db954]" />
+          </h1>
+          <p className="text-xs text-zinc-400 mt-0.5">
+            Full 320kbps Telugu, Hindi, English songs & downloads
+          </p>
+        </div>
       </div>
 
-      {/* Search Input Bar */}
+      {/* 2. Sleek Spotify Search Input Bar */}
       <form onSubmit={handleSubmit} className="relative">
-        <div className="relative flex items-center bg-[#121216] border border-white/10 rounded-2xl px-4 py-1.5 focus-within:border-[#1db954] focus-within:ring-1 focus-within:ring-[#1db954] transition-all shadow-inner">
-          <SearchIcon className="w-5 h-5 text-zinc-400 mr-2 flex-shrink-0" />
+        <div className="relative flex items-center bg-[#14141c] border border-white/10 rounded-xl px-3 py-1 focus-within:border-[#1db954] focus-within:ring-1 focus-within:ring-[#1db954] transition-all shadow-sm">
+          <SearchIcon className="w-4 h-4 text-zinc-400 mr-2 flex-shrink-0" />
           <input
             id="search-input-field"
             type="text"
-            placeholder="Search Telugu, Bollywood, English, artists, movies..."
+            placeholder="Search songs, artists, Telugu, Bollywood..."
             value={localInput}
             onChange={(e) => setLocalInput(e.target.value)}
-            className="w-full bg-transparent border-none text-white text-sm py-2.5 outline-none placeholder:text-zinc-500"
+            className="w-full bg-transparent border-none text-white text-xs sm:text-sm py-2 outline-none placeholder:text-zinc-500"
             autoFocus
           />
           {localInput && (
@@ -119,19 +131,19 @@ export const SearchView: React.FC<SearchViewProps> = ({
               }}
               className="p-1 text-zinc-400 hover:text-white rounded-full transition-colors mr-1"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5" />
             </button>
           )}
           <button
             type="submit"
             id="submit-search-btn"
             disabled={isLoading || !localInput.trim()}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-[#1db954] text-black font-bold text-xs hover:bg-[#22c55e] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex-shrink-0"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#1db954] text-black font-extrabold text-xs hover:bg-[#22c55e] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex-shrink-0"
           >
             {isLoading ? (
               <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                <span>Searching</span>
+                <Loader2 className="w-3 h-3 animate-spin" />
+                <span className="hidden sm:inline">Searching</span>
               </>
             ) : (
               <span>Search</span>
@@ -140,34 +152,36 @@ export const SearchView: React.FC<SearchViewProps> = ({
         </div>
       </form>
 
-      {/* Search History Chips */}
+      {/* 3. Compact Search History Chips */}
       {searchHistory.length > 0 && (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-xs text-zinc-400">
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between text-[11px] text-zinc-400">
             <span>Recent Searches</span>
             <button
               id="clear-all-history-btn"
               onClick={onClearAllHistory}
-              className="hover:text-red-400 transition-colors"
+              className="hover:text-red-400 transition-colors text-[10px]"
             >
               Clear All
             </button>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {searchHistory.map((item) => (
+          <div className="flex flex-wrap gap-1.5">
+            {searchHistory.slice(0, 6).map((item) => (
               <div
                 key={item}
-                className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#1c1c24] hover:bg-[#272733] border border-white/5 text-xs text-zinc-200 cursor-pointer transition-all"
+                className="group inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#1c1c24] hover:bg-[#272733] border border-white/5 text-[11px] text-zinc-200 cursor-pointer transition-all"
               >
-                <span onClick={() => handleChipClick(item)}>{item}</span>
+                <span onClick={() => handleChipClick(item)} className="truncate max-w-[120px]">
+                  {item}
+                </span>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     onClearHistoryItem(item);
                   }}
-                  className="text-zinc-500 hover:text-zinc-300 ml-1"
+                  className="text-zinc-500 hover:text-zinc-300 ml-0.5"
                 >
-                  <X className="w-3 h-3" />
+                  <X className="w-2.5 h-2.5" />
                 </button>
               </div>
             ))}
@@ -175,21 +189,21 @@ export const SearchView: React.FC<SearchViewProps> = ({
         </div>
       )}
 
-      {/* Genre Exploration Chips */}
+      {/* 4. Genre & Mood Chips (When no search active) */}
       {searchResults.length === 0 && !isLoading && (
-        <div className="space-y-3">
-          <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
+        <div className="space-y-2 pt-1">
+          <h3 className="text-[11px] font-extrabold text-zinc-400 uppercase tracking-wider">
             Explore Categories & Moods
           </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {GENRES.map((g) => (
               <button
                 key={g.name}
                 id={`genre-${g.name.replace(/\s+/g, '-').toLowerCase()}`}
                 onClick={() => handleChipClick(g.query)}
-                className="flex items-center gap-2 p-3 rounded-xl bg-[#121216] hover:bg-[#1a1a22] border border-white/[0.06] hover:border-[#1db954]/50 transition-all text-left text-xs font-semibold text-zinc-200 hover:text-white"
+                className="flex items-center gap-2 p-2.5 rounded-xl bg-[#14141c] hover:bg-[#1f1f2a] border border-white/[0.05] hover:border-[#1db954]/40 transition-all text-left text-xs font-semibold text-zinc-200 hover:text-white"
               >
-                <span className="text-base">{g.icon}</span>
+                <span className="text-sm">{g.icon}</span>
                 <span className="truncate">{g.name}</span>
               </button>
             ))}
@@ -197,25 +211,25 @@ export const SearchView: React.FC<SearchViewProps> = ({
         </div>
       )}
 
-      {/* Search Results List */}
+      {/* 5. 🎵 ULTRA-COMPACT SPACE-EFFICIENT SEARCH RESULTS LIST */}
       {searchResults.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-2">
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between pb-1">
+            <h3 className="text-[11px] font-extrabold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
               <span>Full Tracks ({searchResults.length})</span>
-              <span className="px-2 py-0.5 rounded text-[10px] bg-[#1db954]/10 text-[#1db954] border border-[#1db954]/20">
-                320kbps Audio
+              <span className="px-1.5 py-0.2 rounded text-[9px] bg-[#1db954]/10 text-[#1db954] border border-[#1db954]/20 font-bold">
+                320kbps Studio
               </span>
             </h3>
             <button
               onClick={() => onSelectSong(searchResults[0], searchResults)}
-              className="text-xs text-[#1db954] hover:underline font-semibold"
+              className="text-[11px] text-[#1db954] hover:underline font-bold"
             >
               Play All
             </button>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1">
             {searchResults.map((song, index) => {
               const isCurrent = currentSong?.id === song.id;
               const isFav = favorites.some((f) => f.id === song.id);
@@ -226,42 +240,48 @@ export const SearchView: React.FC<SearchViewProps> = ({
                 <div
                   key={`search-res-${song.id}-${index}`}
                   id={`song-result-${song.id}`}
-                  className={`group flex items-center justify-between p-2.5 rounded-xl transition-all cursor-pointer ${
+                  className={`group flex items-center justify-between p-1.5 sm:p-2 rounded-xl transition-all cursor-pointer select-none ${
                     isCurrent
                       ? 'bg-[#1db954]/15 border border-[#1db954]/30'
-                      : 'bg-[#121216]/70 hover:bg-[#1c1c24] border border-white/[0.04]'
+                      : 'bg-[#14141c]/80 hover:bg-[#1f1f2a] border border-white/[0.03]'
                   }`}
                   onClick={() => onSelectSong(song, searchResults)}
                 >
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <div className="relative w-11 h-11 flex-shrink-0 rounded-lg overflow-hidden">
-                      <img
+                  {/* Left: Compact artwork & Track Info */}
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <div className="relative w-9 h-9 sm:w-10 sm:h-10 flex-shrink-0 rounded-lg overflow-hidden bg-[#121216]">
+                      <SafeImage
                         src={song.coverUrl}
                         alt={song.title}
                         className="w-full h-full object-cover"
-                        referrerPolicy="no-referrer"
                       />
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Play className="w-4 h-4 text-white fill-current translate-x-0.5" />
+                        <Play className="w-3.5 h-3.5 text-white fill-current translate-x-0.5" />
                       </div>
+                      {isCurrent && isPlaying && (
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                          <Radio className="w-3.5 h-3.5 text-[#1db954] animate-pulse" />
+                        </div>
+                      )}
                     </div>
 
                     <div className="min-w-0 flex-1">
                       <p
-                        className={`text-xs sm:text-sm font-semibold truncate ${
+                        className={`text-xs sm:text-sm font-bold truncate leading-tight ${
                           isCurrent ? 'text-[#1db954]' : 'text-white'
                         }`}
                       >
                         {song.title}
                       </p>
-                      <p className="text-[11px] text-zinc-400 truncate mt-0.5">
+                      <p className="text-[10px] sm:text-[11px] text-zinc-400 truncate mt-0.5">
                         {song.artist} • <span className="text-zinc-500">{song.album}</span>
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1 sm:gap-2 ml-2 flex-shrink-0">
-                    <span className="text-xs text-zinc-500 font-mono hidden sm:inline">
+                  {/* Right: Quick compact actions */}
+                  <div className="flex items-center gap-1 ml-1.5 flex-shrink-0">
+                    <span className="text-[10px] text-zinc-500 font-mono hidden sm:inline mr-1">
                       {song.duration}
                     </span>
 
@@ -280,14 +300,15 @@ export const SearchView: React.FC<SearchViewProps> = ({
                       title="Download 320kbps MP3"
                     >
                       {isThisDownloading ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       ) : isDownloaded ? (
-                        <CheckCircle2 className="w-4 h-4" />
+                        <CheckCircle2 className="w-3.5 h-3.5" />
                       ) : (
-                        <Download className="w-4 h-4" />
+                        <Download className="w-3.5 h-3.5" />
                       )}
                     </button>
 
+                    {/* Like Button */}
                     <button
                       id={`fav-btn-${song.id}`}
                       onClick={(e) => {
@@ -299,9 +320,10 @@ export const SearchView: React.FC<SearchViewProps> = ({
                       }`}
                       title={isFav ? 'Liked' : 'Like'}
                     >
-                      <Heart className={`w-4 h-4 ${isFav ? 'fill-current' : ''}`} />
+                      <Heart className={`w-3.5 h-3.5 ${isFav ? 'fill-current' : ''}`} />
                     </button>
 
+                    {/* Add to Queue Button */}
                     <button
                       id={`add-queue-${song.id}`}
                       onClick={(e) => {
@@ -311,7 +333,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
                       className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-200 hover:bg-white/10 transition-colors"
                       title="Add to queue"
                     >
-                      <Plus className="w-4 h-4" />
+                      <Plus className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>

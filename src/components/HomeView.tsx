@@ -1,15 +1,18 @@
-import React, { useState } from 'react';
-import { Play, Sparkles, Flame, Clock, Radio, Download, CheckCircle2, Loader2 } from 'lucide-react';
-import { Song, QuickMix } from '../types';
+import React from 'react';
+import { Play, Flame, Clock, Radio, Music, Sparkles, Globe2, Sparkle, Shuffle } from 'lucide-react';
+import { Song, QuickMix, OfflineSong } from '../types';
 import { QUICK_MIXES, CURATED_TRACKS } from '../data/musicData';
-import { downloadSong } from '../services/musicApi';
+import { SafeImage } from './SafeImage';
 
 interface HomeViewProps {
   currentSong: Song | null;
   isPlaying: boolean;
   recentTracks: Song[];
+  offlineSongs: OfflineSong[];
   onPlaySong: (song: Song, customQueue?: Song[]) => void;
   onQuickMixSelect: (mix: QuickMix) => void;
+  onRequestDownload: (song: Song) => void;
+  onNavigateTab: (tab: 'home' | 'search' | 'charts' | 'library') => void;
   onShowToast?: (msg: string) => void;
 }
 
@@ -17,107 +20,215 @@ export const HomeView: React.FC<HomeViewProps> = ({
   currentSong,
   isPlaying,
   recentTracks,
+  offlineSongs,
   onPlaySong,
   onQuickMixSelect,
+  onRequestDownload,
+  onNavigateTab,
   onShowToast,
 }) => {
-  const [downloadingId, setDownloadingId] = useState<string | null>(null);
-  const [downloadedIds, setDownloadedIds] = useState<Set<string>>(new Set());
-
-  const handleDownload = async (e: React.MouseEvent, song: Song) => {
-    e.stopPropagation();
-    if (downloadingId === song.id) return;
-
-    setDownloadingId(song.id);
-    onShowToast?.(`⬇️ Downloading "${song.title}" (320kbps HD)...`);
-
-    const success = await downloadSong(song);
-    setDownloadingId(null);
-
-    if (success) {
-      setDownloadedIds((prev) => new Set(prev).add(song.id));
-      onShowToast?.(`✅ "${song.title}.mp3" saved to your downloads!`);
-    } else {
-      onShowToast?.(`❌ Download failed for "${song.title}"`);
+  // Shuffle all tracks helper
+  const handleShufflePlay = () => {
+    const shuffled = [...CURATED_TRACKS].sort(() => Math.random() - 0.5);
+    if (shuffled.length > 0) {
+      onPlaySong(shuffled[0], shuffled);
+      onShowToast?.(`🔀 Shuffling 320kbps studio mix!`);
     }
   };
 
+  // Group Tracks for Clean Sections
+  const newArrivals = CURATED_TRACKS.filter(
+    (s) => s.year === '2024' || s.year === '2025' || s.year === '2026'
+  ).slice(0, 8);
+
+  const englishHits = CURATED_TRACKS.filter((s) => s.language === 'English');
+
+  const teluguHits = CURATED_TRACKS.filter(
+    (s) =>
+      s.language === 'Telugu' ||
+      s.artist.includes('Devi') ||
+      s.artist.includes('Thaman') ||
+      s.artist.includes('Anirudh')
+  );
+
   return (
-    <div className="space-y-7 animate-fadeIn">
-      {/* Header Profile Greeting */}
-      <div className="flex items-center justify-between pt-2">
+    <div className="space-y-6 animate-fadeIn pb-12">
+      {/* 1. Header & Quick Shuffle */}
+      <div className="flex items-center justify-between pt-1">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
-            Good Day, Explorer <span className="text-xl">👋</span>
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2">
+            <span>Discover Music</span>
+            <span className="text-[10px] uppercase font-black px-1.5 py-0.5 rounded bg-[#1db954]/20 text-[#1db954] border border-[#1db954]/30">
+              HD 320k
+            </span>
           </h1>
-          <p className="text-xs sm:text-sm text-zinc-400 mt-1">
-            Welcome to <span className="text-[#1db954] font-semibold">Charan Music Premium</span> • Full 320kbps Audio
+          <p className="text-xs text-zinc-400 mt-0.5">
+            Full Studio Audio • Telugu, Hindi & English Hits
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#1db954] to-emerald-400 p-[2px] shadow-lg">
-            <div className="w-full h-full rounded-full bg-[#121216] flex items-center justify-center text-xs font-bold text-emerald-400">
-              CM
-            </div>
-          </div>
-        </div>
+
+        <button
+          id="home-shuffle-play-btn"
+          onClick={handleShufflePlay}
+          className="flex items-center gap-1.5 text-xs font-extrabold px-3.5 py-2 rounded-full bg-[#1db954] hover:bg-[#22c55e] text-black transition-all shadow-md active:scale-95"
+          title="Shuffle and play all curated hits"
+        >
+          <Shuffle className="w-3.5 h-3.5" />
+          <span>Shuffle All</span>
+        </button>
       </div>
 
-      {/* Featured Spotlight Banner */}
-      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-emerald-950 via-[#121218] to-purple-950 p-5 border border-white/10 shadow-xl">
-        <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="space-y-2 max-w-md">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#1db954]/20 border border-[#1db954]/30 text-[#1db954] text-[11px] font-bold">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>SPOTLIGHT RELEASE • FULL ALBUM</span>
-            </div>
-            <h3 className="text-xl font-bold text-white leading-tight">
-              Pushpa 2 The Rule (Original Motion Picture Hits)
-            </h3>
-            <p className="text-xs text-zinc-300">
-              Experience the energetic tracks by Devi Sri Prasad in ultra-crisp 320kbps full track audio.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              id="spotlight-play-btn"
-              onClick={() => onPlaySong(CURATED_TRACKS[0], CURATED_TRACKS)}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#1db954] text-black font-bold text-xs hover:bg-[#22c55e] transition-all hover:scale-105 active:scale-95 shadow-lg flex-shrink-0"
-            >
-              <Play className="w-4 h-4 fill-current" />
-              <span>Play Full Track</span>
-            </button>
-            <button
-              id="spotlight-download-btn"
-              onClick={(e) => handleDownload(e, CURATED_TRACKS[0])}
-              className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
-              title="Download 320kbps MP3"
-            >
-              <Download className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* ⚡ Quick Mix Hub */}
+      {/* 2. 🌟 NEW ARRIVALS & FRESH RELEASES (Clean Banner Cards Carousel) */}
       <div>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-xs sm:text-sm font-bold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
-            <span>⚡</span> Quick Mix Hub
-          </h2>
-          <span className="text-[11px] text-zinc-500 font-medium">1-Tap Stations</span>
+        <div className="flex items-center justify-between mb-2.5">
+          <div className="flex items-center gap-1.5">
+            <Sparkles className="w-4 h-4 text-amber-400" />
+            <h2 className="text-sm font-extrabold text-white uppercase tracking-wider">
+              New Arrivals & Fresh Releases
+            </h2>
+          </div>
+          <span className="text-[10px] text-zinc-500 font-semibold px-2 py-0.5 rounded-full bg-white/5">
+            Latest 2024-2025
+          </span>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {QUICK_MIXES.map((mix) => (
+        <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+          {newArrivals.map((song) => {
+            const isThisPlaying = currentSong?.id === song.id && isPlaying;
+            return (
+              <div
+                key={`new-arrival-${song.id}`}
+                id={`new-arrival-${song.id}`}
+                onClick={() => onPlaySong(song, newArrivals)}
+                className="group flex-shrink-0 w-36 sm:w-40 p-2.5 rounded-2xl bg-[#15151e] hover:bg-[#1f1f2c] border border-white/[0.06] hover:border-[#1db954]/40 transition-all duration-200 cursor-pointer shadow-md select-none flex flex-col justify-between"
+              >
+                <div>
+                  <div className="relative w-full aspect-square rounded-xl overflow-hidden shadow-md bg-[#121216]">
+                    <SafeImage
+                      src={song.coverUrl}
+                      alt={song.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+
+                    {/* New Release Badge */}
+                    <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-black/70 backdrop-blur-md border border-white/10 text-[9px] font-black text-amber-400">
+                      NEW
+                    </div>
+
+                    <div className="absolute inset-0 bg-black/40 group-hover:bg-black/60 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                      <div className="w-9 h-9 rounded-full bg-[#1db954] flex items-center justify-center text-black shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-transform">
+                        <Play className="w-4 h-4 fill-current translate-x-0.5" />
+                      </div>
+                    </div>
+
+                    {isThisPlaying && (
+                      <div className="absolute bottom-1.5 right-1.5 bg-black/80 backdrop-blur-sm px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                        <span className="w-1 h-2.5 bg-[#1db954] rounded-full animate-wave-1" />
+                        <span className="w-1 h-2.5 bg-[#1db954] rounded-full animate-wave-2" />
+                      </div>
+                    )}
+                  </div>
+
+                  <p className="mt-2 text-xs font-bold text-white truncate group-hover:text-[#1db954] transition-colors">
+                    {song.title}
+                  </p>
+                  <p className="text-[10px] text-zinc-400 truncate mt-0.5">
+                    {song.artist}
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between mt-2 pt-1 border-t border-white/[0.04]">
+                  <span className="text-[9px] text-[#1db954] font-bold">
+                    {song.language || 'English'}
+                  </span>
+                  <span className="text-[9px] text-zinc-500 font-mono">
+                    320kbps
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 3. 🌍 GLOBAL ENGLISH & BILLBOARD HITS (Brand New Section) */}
+      {englishHits.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-2.5">
+            <div className="flex items-center gap-1.5">
+              <Globe2 className="w-4 h-4 text-sky-400" />
+              <h2 className="text-sm font-extrabold text-white uppercase tracking-wider">
+                Global English & Billboard Hits
+              </h2>
+            </div>
+            <button
+              onClick={() => onPlaySong(englishHits[0], englishHits)}
+              className="text-[11px] text-[#1db954] hover:underline font-bold"
+            >
+              Play All
+            </button>
+          </div>
+
+          <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+            {englishHits.map((song) => {
+              const isThisCurrent = currentSong?.id === song.id && isPlaying;
+              return (
+                <div
+                  key={`english-${song.id}`}
+                  id={`english-song-${song.id}`}
+                  onClick={() => onPlaySong(song, englishHits)}
+                  className="group flex-shrink-0 w-28 sm:w-32 cursor-pointer select-none"
+                >
+                  <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-xl overflow-hidden shadow-md border border-white/5 group-hover:border-sky-400/50 transition-all bg-[#15151e]">
+                    <SafeImage
+                      src={song.coverUrl}
+                      alt={song.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                    />
+                    <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                      <div className="w-8 h-8 rounded-full bg-[#1db954] flex items-center justify-center text-black shadow-lg">
+                        <Play className="w-3.5 h-3.5 fill-current translate-x-0.5" />
+                      </div>
+                    </div>
+                    {isThisCurrent && (
+                      <div className="absolute bottom-1.5 right-1.5 bg-black/70 backdrop-blur-sm px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                        <span className="w-1 h-2.5 bg-[#1db954] rounded-full animate-wave-1" />
+                        <span className="w-1 h-2.5 bg-[#1db954] rounded-full animate-wave-2" />
+                      </div>
+                    )}
+                  </div>
+                  <p className="mt-1.5 text-xs font-semibold text-white truncate group-hover:text-sky-300 transition-colors">
+                    {song.title}
+                  </p>
+                  <p className="text-[10px] text-zinc-400 truncate mt-0.5">
+                    {song.artist}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 4. ⚡ Quick Mix Radios (Clean 4-column quick stations) */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-xs font-extrabold text-white uppercase tracking-wider flex items-center gap-1.5">
+            <span>⚡</span> Quick Mix Radios
+          </h2>
+          <span className="text-[10px] text-zinc-500 font-medium">1-Tap Stations</span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {QUICK_MIXES.slice(0, 4).map((mix) => (
             <div
               key={mix.id}
               id={`quick-mix-${mix.id}`}
               onClick={() => onQuickMixSelect(mix)}
-              className="group relative flex items-center gap-3 p-3 rounded-xl bg-[#121216] hover:bg-[#1c1c24] border border-white/[0.06] hover:border-[#1db954]/40 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 shadow-md overflow-hidden"
+              className="group relative flex items-center gap-2 p-2 rounded-xl bg-[#14141c] hover:bg-[#1f1f2a] border border-white/[0.06] hover:border-[#1db954]/40 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 shadow-sm overflow-hidden select-none"
             >
               <div
-                className={`w-10 h-10 rounded-lg bg-gradient-to-br ${mix.gradient} flex items-center justify-center text-lg shadow-inner flex-shrink-0 group-hover:scale-110 transition-transform`}
+                className={`w-8 h-8 rounded-lg bg-gradient-to-br ${mix.gradient} flex items-center justify-center text-sm shadow-inner flex-shrink-0 group-hover:scale-110 transition-transform`}
               >
                 {mix.emoji}
               </div>
@@ -129,49 +240,52 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       </div>
 
-      {/* ⏱️ Jump Back In (Recent Tracks) */}
-      {recentTracks.length > 0 && (
+      {/* 5. 🎬 Telugu Cinema Blockbusters */}
+      {teluguHits.length > 0 && (
         <div>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xs sm:text-sm font-bold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
-              <Clock className="w-4 h-4 text-[#1db954]" /> Jump Back In
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-xs font-extrabold text-white uppercase tracking-wider flex items-center gap-1.5">
+              <Music className="w-3.5 h-3.5 text-emerald-400" /> Telugu Cinema Blockbusters
             </h2>
-            <span className="text-[11px] text-zinc-500">{recentTracks.length} full songs</span>
+            <button
+              onClick={() => onPlaySong(teluguHits[0], teluguHits)}
+              className="text-[10px] text-[#1db954] hover:underline font-bold"
+            >
+              Play All
+            </button>
           </div>
 
-          <div className="flex gap-3.5 overflow-x-auto pb-2 no-scrollbar">
-            {recentTracks.map((song) => {
-              const isCurrentlyPlaying = currentSong?.id === song.id && isPlaying;
+          <div className="flex gap-2.5 overflow-x-auto pb-1 no-scrollbar">
+            {teluguHits.map((song) => {
+              const isThisCurrent = currentSong?.id === song.id && isPlaying;
               return (
                 <div
-                  key={`recent-${song.id}`}
-                  id={`recent-track-${song.id}`}
-                  onClick={() => onPlaySong(song, recentTracks)}
-                  className="group flex-shrink-0 w-28 sm:w-32 cursor-pointer"
+                  key={`telugu-${song.id}`}
+                  onClick={() => onPlaySong(song, teluguHits)}
+                  className="group flex-shrink-0 w-24 sm:w-28 cursor-pointer select-none"
                 >
-                  <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-xl overflow-hidden shadow-lg border border-white/5 group-hover:border-[#1db954]/50 transition-all">
-                    <img
+                  <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden shadow-md border border-white/5 group-hover:border-[#1db954]/50 transition-all bg-[#14141c]">
+                    <SafeImage
                       src={song.coverUrl}
                       alt={song.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                      referrerPolicy="no-referrer"
                     />
                     <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                      <div className="w-9 h-9 rounded-full bg-[#1db954] flex items-center justify-center text-black shadow-lg">
-                        <Play className="w-4 h-4 fill-current translate-x-0.5" />
+                      <div className="w-8 h-8 rounded-full bg-[#1db954] flex items-center justify-center text-black shadow-lg">
+                        <Play className="w-3.5 h-3.5 fill-current translate-x-0.5" />
                       </div>
                     </div>
-                    {isCurrentlyPlaying && (
-                      <div className="absolute bottom-2 right-2 bg-black/70 backdrop-blur-sm px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                        <span className="w-1 h-3 bg-[#1db954] rounded-full animate-wave-1" />
-                        <span className="w-1 h-3 bg-[#1db954] rounded-full animate-wave-2" />
+                    {isThisCurrent && (
+                      <div className="absolute bottom-1.5 right-1.5 bg-black/70 backdrop-blur-sm px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                        <span className="w-1 h-2.5 bg-[#1db954] rounded-full animate-wave-1" />
+                        <span className="w-1 h-2.5 bg-[#1db954] rounded-full animate-wave-2" />
                       </div>
                     )}
                   </div>
-                  <p className="mt-2 text-xs font-semibold text-white truncate group-hover:text-[#1db954]">
+                  <p className="mt-1.5 text-xs font-semibold text-white truncate group-hover:text-[#1db954]">
                     {song.title}
                   </p>
-                  <p className="text-[11px] text-zinc-400 truncate mt-0.5">
+                  <p className="text-[10px] text-zinc-400 truncate mt-0.5">
                     {song.artist}
                   </p>
                 </div>
@@ -181,96 +295,135 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       )}
 
-      {/* 🔥 Trending Essentials */}
+      {/* 6. ⏱️ Jump Back In (Recent Tracks if any) */}
+      {recentTracks.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-xs font-extrabold text-white uppercase tracking-wider flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5 text-[#1db954]" /> Jump Back In
+            </h2>
+            <span className="text-[10px] text-zinc-500">{recentTracks.length} tracks</span>
+          </div>
+
+          <div className="flex gap-2.5 overflow-x-auto pb-1 no-scrollbar">
+            {recentTracks.map((song) => {
+              const isCurrentlyPlaying = currentSong?.id === song.id && isPlaying;
+              return (
+                <div
+                  key={`recent-${song.id}`}
+                  id={`recent-track-${song.id}`}
+                  onClick={() => onPlaySong(song, recentTracks)}
+                  className="group flex-shrink-0 w-24 sm:w-28 cursor-pointer select-none"
+                >
+                  <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden shadow-md border border-white/5 group-hover:border-[#1db954]/50 transition-all bg-[#14141c]">
+                    <SafeImage
+                      src={song.coverUrl}
+                      alt={song.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                    />
+                    <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                      <div className="w-8 h-8 rounded-full bg-[#1db954] flex items-center justify-center text-black shadow-lg">
+                        <Play className="w-3.5 h-3.5 fill-current translate-x-0.5" />
+                      </div>
+                    </div>
+                    {isCurrentlyPlaying && (
+                      <div className="absolute bottom-1.5 right-1.5 bg-black/70 backdrop-blur-sm px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                        <span className="w-1 h-2.5 bg-[#1db954] rounded-full animate-wave-1" />
+                        <span className="w-1 h-2.5 bg-[#1db954] rounded-full animate-wave-2" />
+                      </div>
+                    )}
+                  </div>
+                  <p className="mt-1.5 text-xs font-semibold text-white truncate group-hover:text-[#1db954]">
+                    {song.title}
+                  </p>
+                  <p className="text-[10px] text-zinc-400 truncate mt-0.5">
+                    {song.artist}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 7. 🔥 Trending Chartbusters Top List */}
       <div>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-xs sm:text-sm font-bold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
-            <Flame className="w-4 h-4 text-orange-500" /> Trending Chartbusters (Full Length)
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-xs font-extrabold text-white uppercase tracking-wider flex items-center gap-1.5">
+            <Flame className="w-3.5 h-3.5 text-orange-500" /> Trending Chartbusters
           </h2>
           <button
             onClick={() => onPlaySong(CURATED_TRACKS[0], CURATED_TRACKS)}
-            className="text-[11px] text-[#1db954] hover:underline font-semibold"
+            className="text-[10px] text-[#1db954] hover:underline font-bold"
           >
             Play All
           </button>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1">
           {CURATED_TRACKS.slice(0, 8).map((song, index) => {
             const isCurrent = currentSong?.id === song.id;
-            const isThisDownloading = downloadingId === song.id;
-            const isDownloaded = downloadedIds.has(song.id);
 
             return (
               <div
                 key={`trending-${song.id}`}
                 id={`trending-track-${song.id}`}
                 onClick={() => onPlaySong(song, CURATED_TRACKS)}
-                className={`flex items-center justify-between p-2.5 rounded-xl cursor-pointer transition-all ${
+                className={`flex items-center justify-between p-1.5 sm:p-2 rounded-xl cursor-pointer transition-all ${
                   isCurrent
                     ? 'bg-[#1db954]/15 border border-[#1db954]/30'
-                    : 'bg-[#121216]/60 hover:bg-[#1c1c24] border border-white/[0.04]'
+                    : 'bg-[#14141c]/70 hover:bg-[#1e1e28] border border-white/[0.03]'
                 }`}
               >
-                <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
                   <span
-                    className={`w-5 text-center text-xs font-bold ${
+                    className={`w-3.5 text-center text-[11px] font-extrabold ${
                       index < 3 ? 'text-[#1db954]' : 'text-zinc-500'
                     }`}
                   >
                     {index + 1}
                   </span>
-                  <img
+                  <SafeImage
                     src={song.coverUrl}
                     alt={song.title}
-                    className="w-11 h-11 rounded-lg object-cover flex-shrink-0"
-                    referrerPolicy="no-referrer"
+                    className="w-9 h-9 rounded-lg object-cover flex-shrink-0"
                   />
                   <div className="min-w-0 flex-1">
                     <p
-                      className={`text-xs sm:text-sm font-semibold truncate ${
+                      className={`text-xs sm:text-sm font-bold truncate leading-tight ${
                         isCurrent ? 'text-[#1db954]' : 'text-white'
                       }`}
                     >
                       {song.title}
                     </p>
-                    <p className="text-[11px] text-zinc-400 truncate mt-0.5">
-                      {song.artist}
+                    <p className="text-[10px] text-zinc-400 truncate mt-0.5">
+                      {song.artist} • <span className="text-zinc-500">{song.language || 'English'}</span>
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 sm:gap-3 ml-2 flex-shrink-0">
-                  <span className="text-xs text-zinc-400 font-mono hidden sm:inline">{song.duration}</span>
-                  
-                  {/* Download Button */}
+                <div className="flex items-center gap-1.5 ml-2 flex-shrink-0">
+                  <span className="text-[11px] text-zinc-400 font-mono hidden sm:inline">
+                    {song.duration}
+                  </span>
+
                   <button
                     id={`trending-download-${song.id}`}
-                    onClick={(e) => handleDownload(e, song)}
-                    disabled={isThisDownloading}
-                    className={`p-1.5 rounded-lg hover:bg-white/10 transition-colors ${
-                      isDownloaded
-                        ? 'text-emerald-400'
-                        : isThisDownloading
-                        ? 'text-[#1db954] animate-pulse'
-                        : 'text-zinc-400 hover:text-[#1db954]'
-                    }`}
-                    title="Download 320kbps MP3"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRequestDownload(song);
+                    }}
+                    className="p-1.5 rounded-lg text-zinc-400 hover:text-[#1db954] hover:bg-white/10 transition-colors"
+                    title="Download Options"
                   >
-                    {isThisDownloading ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : isDownloaded ? (
-                      <CheckCircle2 className="w-4 h-4" />
-                    ) : (
-                      <Download className="w-4 h-4" />
-                    )}
+                    <Music className="w-3.5 h-3.5" />
                   </button>
 
-                  <div className="w-8 h-8 rounded-full bg-white/5 hover:bg-[#1db954] hover:text-black flex items-center justify-center text-zinc-300 transition-colors">
+                  <div className="w-7 h-7 rounded-full bg-white/5 hover:bg-[#1db954] hover:text-black flex items-center justify-center text-zinc-300 transition-colors">
                     {isCurrent && isPlaying ? (
-                      <Radio className="w-4 h-4 text-[#1db954]" />
+                      <Radio className="w-3.5 h-3.5 text-black" />
                     ) : (
-                      <Play className="w-3.5 h-3.5 fill-current translate-x-0.5" />
+                      <Play className="w-3 h-3 fill-current translate-x-0.5" />
                     )}
                   </div>
                 </div>
